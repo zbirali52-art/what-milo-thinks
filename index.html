@@ -1,0 +1,1933 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>What Milo Thinks — Upload a chat. Milo tells you what's really going on.</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Instrument Serif', 'Georgia', 'serif'],
+            sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            parchment: '#FAF6F0',
+            parchmentDeep: '#F3ECE1',
+            parchmentCard: '#FFFDF9',
+            espresso: '#191715',
+            stoneMuted: '#6E665E',
+            hairline: '#E4DDD1',
+            terracotta: '#D94E34',
+            terracottaDark: '#B83B24',
+            amberWarm: '#D9822B',
+            sage: '#2E6F40',
+            nightBg: '#141210',
+            nightCard: '#1D1A17',
+            nightBorder: '#2E2924'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      --bg-primary: #FAF6F0;
+      --bg-secondary: #F3ECE1;
+      --bg-card: #FFFDF9;
+      --text-primary: #191715;
+      --text-muted: #6E665E;
+      --border-hairline: #E4DDD1;
+      --accent-terra: #D94E34;
+    }
+    html.dark {
+      --bg-primary: #141210;
+      --bg-secondary: #1D1A17;
+      --bg-card: #221E1B;
+      --text-primary: #F5EFE6;
+      --text-muted: #A69C91;
+      --border-hairline: #332D27;
+      --accent-terra: #E56046;
+    }
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      overflow-x: hidden;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+    /* Subtle paper grain texture */
+    .paper-surface {
+      background-image: radial-gradient(rgba(25, 23, 21, 0.03) 1px, transparent 0);
+      background-size: 24px 24px;
+    }
+    html.dark .paper-surface {
+      background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 0);
+    }
+    /* Editorial Pull Quote & Evidence Badges */
+    .evidence-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 1px 8px;
+      margin: 0 2px;
+      border-radius: 9999px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+      background-color: rgba(217, 78, 52, 0.11);
+      color: #D94E34;
+      border: 1px solid rgba(217, 78, 52, 0.28);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    html.dark .evidence-chip {
+      background-color: rgba(229, 96, 70, 0.16);
+      color: #F2826B;
+      border-color: rgba(229, 96, 70, 0.35);
+    }
+    .evidence-chip:hover {
+      background-color: #D94E34;
+      color: #FFFDF9;
+      transform: translateY(-1px);
+    }
+    /* Smooth Marquee Animation for Wall of Love */
+    @keyframes marqueeLeft {
+      0% { transform: translateX(0%); }
+      100% { transform: translateX(-50%); }
+    }
+    .marquee-track {
+      display: flex;
+      width: max-content;
+      animation: marqueeLeft 46s linear infinite;
+    }
+    .marquee-track:hover {
+      animation-play-state: paused;
+    }
+    /* Chat bubble animations */
+    .chat-bubble-item {
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .chat-bubble-item:hover {
+      transform: scale(1.015);
+    }
+    .chat-bubble-active {
+      outline: 2px solid #D94E34;
+      outline-offset: 2px;
+    }
+    @media print {
+      header, #hero-section, #categories-section, #apps-section, #counters-section, #wall-of-love, #studio-uploader, footer, .no-print {
+        display: none !important;
+      }
+      body {
+        background: #FFFFFF !important;
+        color: #000000 !important;
+      }
+      #milo-report-section {
+        display: block !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+    }
+  </style>
+</head>
+<body class="paper-surface font-sans antialiased selection:bg-[#D94E34] selection:text-white">
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 hidden items-center gap-3 px-5 py-3.5 rounded-full bg-[#191715] dark:bg-[#F5EFE6] text-[#FAF6F0] dark:text-[#191715] text-xs sm:text-sm font-medium shadow-2xl border border-[#E4DDD1]/20 transition-all">
+    <span class="w-2 h-2 rounded-full bg-[#D94E34] animate-ping"></span>
+    <span id="toastText">Milo has finished reading your chat.</span>
+  </div>
+
+  <!-- STICKY EDITORIAL HEADER -->
+  <header class="sticky top-0 z-40 backdrop-blur-md bg-[#FAF6F0]/90 dark:bg-[#141210]/90 border-b border-[#E4DDD1] dark:border-[#2E2924] transition-colors">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-3">
+      <!-- Left: Custom SVG Milo Mascot Logo + Wordmark -->
+      <a href="#" class="flex items-center gap-3 group">
+        <div class="w-11 h-11 rounded-2xl bg-[#F3ECE1] dark:bg-[#221E1B] border border-[#E4DDD1] dark:border-[#332D27] flex items-center justify-center shadow-sm group-hover:border-[#D94E34] transition">
+          <!-- Bespoke SVG Logo for "What Milo Thinks": Witty Editorial Critic with Monocle, Raised Eyebrow & Fountain Nib -->
+          <svg class="w-7 h-7" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Milo Mascot Logo">
+            <!-- Speech bubble / editorial page outline -->
+            <path d="M8 10C8 7.79086 9.79086 6 12 6H28C30.2091 6 32 7.79086 32 10V25C32 27.2091 30.2091 29 28 29H18L11.5 34V29H12C9.79086 29 8 27.2091 8 25V10Z" fill="#FFFDF9" stroke="#191715" stroke-width="2" stroke-linejoin="round"/>
+            <!-- Raised skeptical left eyebrow -->
+            <path d="M12.5 13.2C13.8 11.6 16.2 11.4 17.8 12.6" stroke="#D94E34" stroke-width="2.2" stroke-linecap="round"/>
+            <!-- Flat unimpressed right eyebrow -->
+            <path d="M22.2 13.8H26.8" stroke="#191715" stroke-width="2" stroke-linecap="round"/>
+            <!-- Left Monocle Lens (Terracotta) -->
+            <circle cx="15.2" cy="18" r="3.4" fill="#FAF6F0" stroke="#D94E34" stroke-width="2"/>
+            <circle cx="15.2" cy="18" r="1.2" fill="#191715"/>
+            <!-- Monocle chain -->
+            <path d="M12 19.5C10.8 21.5 10.8 24 12 26" stroke="#D94E34" stroke-width="1.3" stroke-dasharray="1.5 1.5" stroke-linecap="round"/>
+            <!-- Right Eye -->
+            <circle cx="24.5" cy="18" r="1.4" fill="#191715"/>
+            <!-- Wry knowing smirk / fountain nib mustache -->
+            <path d="M16.5 23.5C18.8 25 21.8 24.8 24 23" stroke="#191715" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-serif text-2xl sm:text-[27px] tracking-tight leading-none text-[#191715] dark:text-[#F5EFE6]">What Milo Thinks</span>
+            <span class="hidden sm:inline-block text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-full bg-[#D94E34]/12 text-[#D94E34] border border-[#D94E34]/30 font-semibold">100% Offline</span>
+          </div>
+          <p class="text-[11px] text-[#6E665E] dark:text-[#A69C91] hidden sm:block">whatmilothinks.com • Zero-LLM Private Chat Critic</p>
+        </div>
+      </a>
+
+      <!-- Center: Editorial Navigation Links -->
+      <nav class="hidden lg:flex items-center gap-6 text-sm font-medium text-[#6E665E] dark:text-[#A69C91]">
+        <a href="#jamie-showcase" class="hover:text-[#191715] dark:hover:text-white transition">Live Example</a>
+        <a href="#categories-section" class="hover:text-[#191715] dark:hover:text-white transition">12 Chat Types</a>
+        <a href="#wall-of-love" class="hover:text-[#191715] dark:hover:text-white transition">Wall of Love</a>
+        <a href="#milo-report-section" class="hover:text-[#191715] dark:hover:text-white transition">Read Report</a>
+        <button id="openBlueprintBtnNav" type="button" class="text-[#D94E34] font-semibold hover:underline flex items-center gap-1">
+          <span>For Zed Kazi (Startup Plan)</span>
+        </button>
+      </nav>
+
+      <!-- Right Actions: Late Night Mode + Try It Now CTA -->
+      <div class="flex items-center gap-2.5">
+        <button id="themeToggleBtn" type="button" title="Toggle Late Night Reading Mode" class="p-2.5 rounded-full bg-[#F3ECE1] dark:bg-[#221E1B] border border-[#E4DDD1] dark:border-[#332D27] text-[#191715] dark:text-[#F5EFE6] hover:border-[#D94E34] transition text-xs font-mono">
+          <span id="themeToggleIcon">🌙</span>
+        </button>
+        <a href="#studio-uploader" class="px-4 sm:px-5 py-2.5 rounded-full bg-[#191715] dark:bg-[#F5EFE6] text-[#FAF6F0] dark:text-[#191715] hover:bg-[#D94E34] dark:hover:bg-[#D94E34] dark:hover:text-white text-xs sm:text-sm font-semibold transition shadow-sm">
+          Try It Now
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 space-y-20 sm:space-y-28 py-10 sm:py-16">
+
+    <!-- =================================================================== -->
+    <!-- 1. HERO SECTION + ICONIC "SATURDAY DINNER WITH JAMIE" CHAT SHOWCASE -->
+    <!-- =================================================================== -->
+    <section id="hero-section" class="text-center space-y-8">
+      <!-- Exact Emoji Cluster Row from WhatBrandonThinks.com -->
+      <div class="inline-flex flex-wrap items-center justify-center gap-2 sm:gap-3 px-5 py-2 rounded-full bg-[#F3ECE1] dark:bg-[#1D1A17] border border-[#E4DDD1] dark:border-[#2E2924] text-base sm:text-lg shadow-sm" aria-label="Chat relationships">
+        <span>💔</span><span>💍</span><span>🌀</span><span>👀</span><span>💌</span><span>😂</span><span>🐐</span><span>🍻</span><span>💅</span><span>🎉</span><span>👵</span><span>👴</span><span>👨‍👩‍👧</span><span>🎂</span><span>🍝</span>
+      </div>
+
+      <!-- Huge Editorial Serif Headline -->
+      <div class="max-w-3xl mx-auto space-y-5">
+        <h1 class="font-serif text-5xl sm:text-7xl leading-[1.03] tracking-tight text-[#191715] dark:text-[#F5EFE6]">
+          Upload a chat.<br />
+          <span class="italic text-[#D94E34]">Milo tells you what's really going on.</span>
+        </h1>
+        <p class="text-base sm:text-xl text-[#6E665E] dark:text-[#A69C91] max-w-2xl mx-auto leading-relaxed font-normal">
+          Milo reads every message and writes what he really thinks about everyone in it. <strong class="text-[#191715] dark:text-[#F5EFE6] font-semibold">100% offline &amp; private</strong>—runs locally in your browser with zero AI servers ever touching your messages.
+        </p>
+      </div>
+
+      <!-- Primary Hero CTA Buttons -->
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-1">
+        <a href="#studio-uploader" class="w-full sm:w-auto px-8 py-4 rounded-full bg-[#D94E34] hover:bg-[#B83B24] text-white font-semibold text-base shadow-lg shadow-[#D94E34]/20 transition flex items-center justify-center gap-2">
+          <span>Try It Now — Upload Your Chat</span>
+          <span>→</span>
+        </a>
+        <a href="#categories-section" class="w-full sm:w-auto px-7 py-4 rounded-full bg-[#F3ECE1] dark:bg-[#1D1A17] hover:bg-[#E4DDD1] dark:hover:bg-[#2E2924] text-[#191715] dark:text-[#F5EFE6] border border-[#E4DDD1] dark:border-[#2E2924] font-semibold text-sm sm:text-base transition">
+          Not sure which chat? Pick a sample ↓
+        </a>
+      </div>
+
+      <!-- SIGNATURE INTERACTIVE SHOWCASE: THE JAMIE SATURDAY DINNER THREAD -->
+      <div id="jamie-showcase" class="pt-6 text-left">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch bg-[#F3ECE1]/75 dark:bg-[#1D1A17] border border-[#E4DDD1] dark:border-[#2E2924] rounded-[32px] p-5 sm:p-8 shadow-sm">
+
+          <!-- Left 6 Cols: Realistic Phone Chat UI (Exact Saturday Dinner Conversation with Jamie) -->
+          <div class="lg:col-span-6 bg-[#FFFDF9] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924] rounded-3xl overflow-hidden shadow-md flex flex-col">
+            <!-- Phone Chat Top Bar -->
+            <div class="px-5 py-3.5 bg-[#FAF6F0] dark:bg-[#1D1A17] border-b border-[#E4DDD1] dark:border-[#2E2924] flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-[#D94E34]/15 text-[#D94E34] font-serif text-lg font-bold flex items-center justify-center">J</div>
+                <div>
+                  <div class="text-sm font-bold text-[#191715] dark:text-[#F5EFE6]">Jamie</div>
+                  <div class="text-[11px] text-[#6E665E] dark:text-[#A69C91]">Tap any message to see Milo's live annotation</div>
+                </div>
+              </div>
+              <span class="text-[11px] font-mono px-2.5 py-1 rounded-full bg-[#F3ECE1] dark:bg-[#221E1B] text-[#6E665E] dark:text-[#A69C91]">Thu, 14:06–14:54</span>
+            </div>
+
+            <!-- Scrollable 16-Message Thread from WhatBrandonThinks.com -->
+            <div id="heroJamieChatList" class="p-4 sm:p-5 space-y-2.5 max-h-[460px] overflow-y-auto text-xs sm:text-[13px]">
+              <!-- Populated by JS so each bubble is clickable & synced with Milo's Margin Notes -->
+            </div>
+          </div>
+
+          <!-- Right 6 Cols: Milo's Live Margin Notes & Instant Full Report Trigger -->
+          <div class="lg:col-span-6 flex flex-col justify-between bg-[#FFFDF9] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924] rounded-3xl p-6 sm:p-8 space-y-6">
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <span class="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-[#D94E34] font-semibold">
+                  <span class="w-2 h-2 rounded-full bg-[#D94E34]"></span>
+                  MILO'S MARGIN NOTE ON THIS LINE
+                </span>
+                <span id="marginNoteTimestamp" class="text-xs font-mono text-[#6E665E]">14:34</span>
+              </div>
+
+              <!-- Highlighted Quote Bubble -->
+              <div class="p-4 rounded-2xl bg-[#FAF6F0] dark:bg-[#1D1A17] border border-[#E4DDD1] dark:border-[#2E2924]">
+                <div class="text-[11px] font-mono uppercase text-[#6E665E] dark:text-[#A69C91]" id="marginNoteSpeaker">Jamie wrote:</div>
+                <div class="font-serif text-2xl sm:text-3xl italic text-[#191715] dark:text-[#F5EFE6] mt-0.5" id="marginNoteQuote">
+                  “yeah should be!!”
+                </div>
+              </div>
+
+              <!-- Milo's Commentary -->
+              <div class="space-y-3">
+                <h3 class="font-serif text-2xl sm:text-3xl text-[#191715] dark:text-[#F5EFE6] leading-snug" id="marginNoteHeadline">
+                  The Double-Exclamation Hedge
+                </h3>
+                <p class="text-sm sm:text-base text-[#6E665E] dark:text-[#A69C91] leading-relaxed" id="marginNoteBody">
+                  “Yeah should be!!” with two exclamation marks at 2:34 PM on a Thursday after you already booked a table for 8 is the universal battle cry of someone keeping their Saturday night open until a better offer fails to materialize. Notice how the enthusiasm goes up the less committed the actual words are.
+                </p>
+              </div>
+            </div>
+
+            <!-- Mini Forensic Telemetry Pills for the Jamie Thread -->
+            <div class="space-y-4 pt-4 border-t border-[#E4DDD1] dark:border-[#2E2924]">
+              <div class="grid grid-cols-3 gap-2.5 text-center">
+                <div class="p-3 rounded-2xl bg-[#FAF6F0] dark:bg-[#1D1A17] border border-[#E4DDD1] dark:border-[#2E2924]">
+                  <div class="text-[10px] font-mono uppercase text-[#6E665E]">DARVO FLIP</div>
+                  <div class="font-serif text-xl sm:text-2xl text-[#D94E34]">14:30</div>
+                  <div class="text-[10px] text-[#6E665E] truncate">“bit much”</div>
+                </div>
+                <div class="p-3 rounded-2xl bg-[#FAF6F0] dark:bg-[#1D1A17] border border-[#E4DDD1] dark:border-[#2E2924]">
+                  <div class="text-[10px] font-mono uppercase text-[#6E665E]">COLD “OK” BOMB</div>
+                  <div class="font-serif text-xl sm:text-2xl text-[#191715] dark:text-[#F5EFE6]">14:42</div>
+                  <div class="text-[10px] text-[#6E665E] truncate">Instant panic</div>
+                </div>
+                <div class="p-3 rounded-2xl bg-[#FAF6F0] dark:bg-[#1D1A17] border border-[#E4DDD1] dark:border-[#2E2924]">
+                  <div class="text-[10px] font-mono uppercase text-[#6E665E]">BROKEN PROMISE</div>
+                  <div class="font-serif text-xl sm:text-2xl text-[#D9822B]">Tuesday</div>
+                  <div class="text-[10px] text-[#6E665E] truncate">Still no call</div>
+                </div>
+              </div>
+
+              <button id="loadJamieFullReportBtn" type="button" class="w-full py-3.5 px-5 rounded-full bg-[#191715] dark:bg-[#F5EFE6] hover:bg-[#D94E34] dark:hover:bg-[#D94E34] text-[#FAF6F0] dark:text-[#191715] dark:hover:text-white font-semibold text-xs sm:text-sm transition flex items-center justify-center gap-2">
+                <span>Read Milo's Full Unfiltered Report on You &amp; Jamie</span>
+                <span>↓</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- 2. "NOT SURE WHICH CHAT TO TRY?" — EXACT 12 INTERACTIVE PILLS       -->
+    <!-- =================================================================== -->
+    <section id="categories-section" class="space-y-8 text-center">
+      <div class="space-y-3 max-w-2xl mx-auto">
+        <span class="text-xs font-mono uppercase tracking-widest text-[#D94E34] font-semibold">Instant Sample Conversations</span>
+        <h2 class="font-serif text-4xl sm:text-5xl text-[#191715] dark:text-[#F5EFE6]">Not sure which chat to try?</h2>
+        <p class="text-sm sm:text-base text-[#6E665E] dark:text-[#A69C91]">
+          Tap any of the 12 relationship or group dynamics below to load a realistic chat and watch Milo dissect everyone in it—or upload your own below.
+        </p>
+      </div>
+
+      <!-- 12 Category Pills Grid -->
+      <div id="categoryPillsContainer" class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3.5 max-w-4xl mx-auto">
+        <!-- Populated dynamically by JS with all 12 categories from WhatBrandonThinks.com -->
+      </div>
+
+      <p class="font-serif italic text-xl text-[#6E665E] dark:text-[#A69C91]">…and any other chat.</p>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- 3. "WORKS WITH YOUR CHAT APP" + LIVE COUNTERS                       -->
+    <!-- =================================================================== -->
+    <section id="apps-section" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-[#F3ECE1]/60 dark:bg-[#1D1A17] border border-[#E4DDD1] dark:border-[#2E2924] rounded-[32px] p-6 sm:p-10">
+      <div class="lg:col-span-5 space-y-3">
+        <span class="text-xs font-mono uppercase tracking-widest text-[#2E6F40] font-semibold">Universal Offline Parser</span>
+        <h2 class="font-serif text-3xl sm:text-4xl text-[#191715] dark:text-[#F5EFE6]">Works with your chat app.</h2>
+        <p class="text-sm sm:text-base text-[#6E665E] dark:text-[#A69C91] leading-relaxed">
+          Export your conversation from any major messenger as a <code class="font-mono text-xs px-1.5 py-0.5 rounded bg-[#FAF6F0] dark:bg-[#141210]">.txt</code>, <code class="font-mono text-xs px-1.5 py-0.5 rounded bg-[#FAF6F0] dark:bg-[#141210]">.json</code>, or <code class="font-mono text-xs px-1.5 py-0.5 rounded bg-[#FAF6F0] dark:bg-[#141210]">.csv</code> file—or simply copy and paste the messages.
+        </p>
+        <button id="openExportGuideBtn" type="button" class="inline-flex items-center gap-2 text-xs font-mono font-semibold text-[#D94E34] hover:underline pt-1">
+          <span>How do I export a chat in 10 seconds?</span>
+          <span>→</span>
+        </button>
+      </div>
+
+      <div class="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <!-- WhatsApp -->
+        <div class="p-4 rounded-2xl bg-[#FFFDF9] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924] flex items-center gap-3">
+          <span class="w-9 h-9 rounded-xl bg-[#25D366]/15 text-[#1da851] flex items-center justify-center font-bold text-lg">💬</span>
+          <div>
+            <div class="text-sm font-bold text-[#191715] dark:text-[#F5EFE6]">WhatsApp</div>
+            <div class="text-[11px] font-mono text-[#6E665E]">.txt / .zip export</div>
+          </div>
+        </div>
+        <!-- iMessage -->
+        <div class="p-4 rounded-2xl bg-[#FFFDF9] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924] flex items-center gap-3">
+          <span class="w-9 h-9 rounded-xl bg-[#007AFF]/15 text-[#007AFF] flex items-center justify-center font-bold text-lg">💙</span>
+          <div>
+            <div class="text-sm font-bold text-[#191715] dark:text-[#F5EFE6]">iMessage</div>
+            <div class="text-[11px] font-mono text-[#6E665E]">.txt / .csv copy</div>
+          </div>
+        </div>
+        <!-- Instagram -->
+        <div class="p-4 rounded-2xl bg-[#E1306C]/15 text-[#E1306C] flex items-center justify-center font-bold text-lg">📸</div>
+        <div>
+          <div class="text-sm font-bold text-[#191715] dark:text-[#F5EFE6]">Instagram</div>
+          <div class="text-[11px] font-mono text-[#6E665E]">message_1.json</div>
+        </div>
+        <!-- Messenger -->
+        <div class="p-4 rounded-2xl bg-[#FFFDF9] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924] flex items-center gap-3">
+          <span class="w-9 h-9 rounded-xl bg-[#0084FF]/15 text-[#0084FF] flex items-center justify-center font-bold text-lg">⚡</span>
+          <div>
+            <div class="text-sm font-bold text-[#191715] dark:text-[#F5EFE6]">Messenger</div>
+            <div class="text-[11px] font-mono text-[#6E665E]">JSON / text</div>
+          </div>
+        </div>
+        <!-- LINE -->
+        <div class="p-4 rounded-2xl bg-[#FFFDF9] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924] flex items-center gap-3">
+          <span class="w-9 h-9 rounded-xl bg-[#06C755]/15 text-[#06C755] flex items-center justify-center font-bold text-lg">🟢</span>
+          <div>
+            <div class="text-sm font-bold text-[#191715] dark:text-[#F5EFE6]">LINE</div>
+            <div class="text-[11px] font-mono text-[#6E665E]">Chat history .txt</div>
+          </div>
+        </div>
+        <!-- KakaoTalk -->
+        <div class="p-4 rounded-2xl bg-[#FFFDF9] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924] flex items-center gap-3">
+          <span class="w-9 h-9 rounded-xl bg-[#FEE500]/30 text-[#B8860B] flex items-center justify-center font-bold text-lg">💛</span>
+          <div>
+            <div class="text-sm font-bold text-[#191715] dark:text-[#F5EFE6]">KakaoTalk</div>
+            <div class="text-[11px] font-mono text-[#6E665E]">.txt / .csv export</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- "MILO HAS BEEN BUSY" LIVE EDITORIAL COUNTERS -->
+    <section id="counters-section" class="text-center space-y-6">
+      <p class="font-serif italic text-2xl sm:text-3xl text-[#6E665E] dark:text-[#A69C91]">Milo has been busy</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
+        <div class="p-7 rounded-3xl bg-[#FFFDF9] dark:bg-[#1D1A17] border border-[#E4DDD1] dark:border-[#2E2924] shadow-sm">
+          <div id="liveMessagesCounter" class="font-serif text-5xl sm:text-6xl text-[#191715] dark:text-[#F5EFE6] tracking-tight">1,482,910,450</div>
+          <div class="text-xs font-mono uppercase tracking-widest text-[#6E665E] dark:text-[#A69C91] mt-2">Messages read</div>
+        </div>
+        <div class="p-7 rounded-3xl bg-[#FFFDF9] dark:bg-[#1D1A17] border border-[#E4DDD1] dark:border-[#2E2924] shadow-sm">
+          <div id="liveReportsCounter" class="font-serif text-5xl sm:text-6xl text-[#D94E34] tracking-tight">894,320</div>
+          <div class="text-xs font-mono uppercase tracking-widest text-[#6E665E] dark:text-[#A69C91] mt-2">Total reports written</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- 4. "WALL OF LOVE — TAP ANY SCREENSHOT TO SEE IT"                    -->
+    <!-- =================================================================== -->
+    <section id="wall-of-love" class="space-y-6 overflow-hidden">
+      <div class="text-center space-y-2">
+        <span class="text-xs font-mono uppercase tracking-widest text-[#D94E34] font-semibold">Wall of Love</span>
+        <h2 class="font-serif text-4xl sm:text-5xl text-[#191715] dark:text-[#F5EFE6]">Tap any screenshot to see it</h2>
+        <p class="text-sm text-[#6E665E] dark:text-[#A69C91]">Real reactions when the report hits the group chat.</p>
+      </div>
+
+      <!-- Horizontal Scrolling Marquee Track -->
+      <div class="relative py-3">
+        <div id="wallOfLoveTrack" class="marquee-track gap-5">
+          <!-- Populated dynamically by JS (duplicated for seamless loop) -->
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- 5. "TRY IT NOW" — UPLOAD, PARTICIPANT PERSPECTIVE & VIBE STUDIO     -->
+    <!-- =================================================================== -->
+    <section id="studio-uploader" class="bg-[#F3ECE1] dark:bg-[#1D1A17] border border-[#E4DDD1] dark:border-[#2E2924] rounded-[36px] p-6 sm:p-10 space-y-8 shadow-sm">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#E4DDD1] dark:border-[#2E2924] pb-6">
+        <div class="space-y-2">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2E6F40]/15 text-[#2E6F40] dark:text-emerald-400 text-xs font-mono font-semibold">
+            <span>🔒 100% ON-DEVICE • ZERO CLOUD UPLOADS</span>
+          </div>
+          <h2 class="font-serif text-4xl sm:text-5xl text-[#191715] dark:text-[#F5EFE6]">Give Milo the chat.</h2>
+          <p class="text-sm sm:text-base text-[#6E665E] dark:text-[#A69C91]">
+            Drop a chat export file or paste any conversation below, pick who you are in the thread, and let Milo write the report.
+          </p>
+        </div>
+        <div class="flex items-center gap-2 text-xs font-mono text-[#6E665E] dark:text-[#A69C91]">
+          <span id="detectedFormatPill" class="px-3 py-1.5 rounded-full bg-[#FFFDF9] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924]">FORMAT: WHATSAPP / TEXT</span>
+          <span id="computeLatencyPill" class="px-3 py-1.5 rounded-full bg-[#2E6F40]/15 text-[#2E6F40] dark:text-emerald-400 font-semibold">1.2 ms</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <!-- Left 7 Cols: File Dropzone + Editable Transcript Buffer -->
+        <div class="lg:col-span-7 space-y-4">
+          <label id="fileDropZone" for="chatFileInput" class="cursor-pointer group block rounded-3xl border-2 border-dashed border-[#191715]/25 dark:border-white/20 hover:border-[#D94E34] bg-[#FFFDF9] dark:bg-[#141210] p-6 transition text-center">
+            <input id="chatFileInput" type="file" accept=".txt,.json,.csv" class="hidden" />
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div class="w-12 h-12 rounded-2xl bg-[#F3ECE1] dark:bg-[#221E1B] group-hover:bg-[#D94E34]/15 text-[#D94E34] flex items-center justify-center text-xl transition">
+                📄
+              </div>
+              <div class="text-center sm:text-left">
+                <div class="text-sm sm:text-base font-bold text-[#191715] dark:text-[#F5EFE6] group-hover:text-[#D94E34] transition">
+                  Drop WhatsApp (.txt), Instagram/Messenger (.json), or iMessage (.csv)
+                </div>
+                <div class="text-xs text-[#6E665E] dark:text-[#A69C91]">
+                  Or click to select from your device • Processed entirely in local RAM
+                </div>
+              </div>
+            </div>
+          </label>
+
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-xs font-mono text-[#6E665E] dark:text-[#A69C91]">
+              <span>CHAT TRANSCRIPT BUFFER (EDIT OR PASTE BELOW):</span>
+              <button id="clearTranscriptBtn" type="button" class="hover:text-[#D94E34] underline">Clear text</button>
+            </div>
+            <textarea id="chatInputTextarea" rows="9" class="w-full rounded-3xl bg-[#FFFDF9] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924] focus:border-[#D94E34] focus:outline-none p-4 font-mono text-xs text-[#191715] dark:text-[#F5EFE6] leading-relaxed shadow-inner" placeholder="Paste WhatsApp export, Instagram JSON, or lines like 'Jamie: yeah should be!!'..."></textarea>
+          </div>
+        </div>
+
+        <!-- Right 5 Cols: Participant Review & Perspective Selector (WhatBrandonThinks v1.1 Flow) -->
+        <div class="lg:col-span-5 bg-[#FFFDF9] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924] rounded-3xl p-6 space-y-6 shadow-sm">
+          <div class="space-y-1">
+            <span class="text-[11px] font-mono uppercase tracking-widest text-[#D94E34] font-semibold">Step 2 • Participant Review</span>
+            <h3 class="font-serif text-2xl sm:text-3xl text-[#191715] dark:text-[#F5EFE6]">Who are you in this chat?</h3>
+            <p class="text-xs text-[#6E665E] dark:text-[#A69C91]">
+              Select your name so Milo frames the report around your perspective (or choose "Neutral Observer").
+            </p>
+          </div>
+
+          <!-- Detected Participants Radio Pills -->
+          <div id="detectedParticipantsBox" class="flex flex-wrap gap-2">
+            <!-- Populated dynamically by JS -->
+          </div>
+
+          <!-- Relationship Context Selector -->
+          <div class="space-y-2">
+            <label for="relationshipCategorySelect" class="block text-xs font-mono uppercase text-[#6E665E] dark:text-[#A69C91]">
+              What kind of chat is this?
+            </label>
+            <select id="relationshipCategorySelect" class="w-full rounded-2xl bg-[#FAF6F0] dark:bg-[#1D1A17] border border-[#E4DDD1] dark:border-[#2E2924] px-4 py-3 text-sm font-semibold text-[#191715] dark:text-[#F5EFE6] focus:outline-none focus:border-[#D94E34]">
+              <option value="situationship">🫠 The situationship</option>
+              <option value="friendgroup">🍻 The friend group</option>
+              <option value="relationship">❤️‍🔥 Your relationship</option>
+              <option value="family">🏡 The family group</option>
+              <option value="ex">🥀 Your ex</option>
+              <option value="work">💼 The work chat</option>
+              <option value="crush">👀 Your crush</option>
+              <option value="bestfriend">👯 Your best friend</option>
+              <option value="talkingstage">📱 The talking stage</option>
+              <option value="longdistance">✈️ Long-distance</option>
+              <option value="newone">🦋 The new one</option>
+              <option value="married">💍 Married</option>
+            </select>
+          </div>
+
+          <!-- Generate Report CTA -->
+          <button id="generateMiloReportBtn" type="button" class="w-full py-4 px-6 rounded-full bg-[#D94E34] hover:bg-[#B83B24] text-white font-semibold text-sm sm:text-base shadow-lg shadow-[#D94E34]/25 transition flex items-center justify-center gap-2">
+            <span>Write What Milo Thinks</span>
+            <span>✨</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- 6. THE GENERATED "WHAT MILO THINKS" EDITORIAL REPORT                -->
+    <!-- =================================================================== -->
+    <section id="milo-report-section" class="space-y-10">
+      <!-- Main Parchment Editorial Dossier Container -->
+      <article class="bg-[#FFFDF9] dark:bg-[#1D1A17] border-2 border-[#191715]/15 dark:border-[#F5EFE6]/15 rounded-[36px] p-6 sm:p-12 shadow-xl space-y-12">
+
+        <!-- REPORT MASTHEAD -->
+        <header class="border-b-2 border-[#191715] dark:border-[#F5EFE6]/30 pb-8 space-y-5">
+          <div class="flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-[#6E665E] dark:text-[#A69C91]">
+            <div class="flex items-center gap-2">
+              <span class="px-3 py-1 rounded-full bg-[#D94E34]/15 text-[#D94E34] font-semibold" id="reportCategoryBadge">🫠 THE SITUATIONSHIP</span>
+              <span id="reportIdSpan">REPORT #WMT-4092</span>
+            </div>
+            <div id="reportTelemetrySpan">16 MESSAGES • 2 PEOPLE • 3 MIN READ</div>
+          </div>
+
+          <h2 id="reportEditorialTitle" class="font-serif text-4xl sm:text-6xl leading-[1.06] text-[#191715] dark:text-[#F5EFE6]">
+            The Anatomy of a “Should Be”: One Person Planning Saturday, One Person Auditing Their Escape Routes
+          </h2>
+
+          <p id="reportSubtitleDeck" class="font-serif italic text-xl sm:text-2xl text-[#6E665E] dark:text-[#A69C91] leading-relaxed">
+            Milo read every message, timed every pause, and counted every excuse. Here is what is actually happening in this thread.
+          </p>
+
+          <!-- Participant Summary Pills & Effort Balance Bar -->
+          <div class="pt-2 space-y-3">
+            <div class="flex items-center justify-between text-xs font-mono">
+              <span id="effortLeftLabel" class="font-bold text-[#D94E34]">CARRYING THE EMOTIONAL LABOR: YOU (64%)</span>
+              <span id="effortRightLabel" class="font-bold text-[#191715] dark:text-[#F5EFE6]">HOLDING THE LEVERAGE: JAMIE (36%)</span>
+            </div>
+            <div class="w-full h-3 rounded-full bg-[#F3ECE1] dark:bg-[#141210] overflow-hidden flex border border-[#E4DDD1] dark:border-[#2E2924]">
+              <div id="effortBarLeft" class="h-full bg-[#D94E34] transition-all duration-500" style="width: 64%"></div>
+              <div id="effortBarRight" class="h-full bg-[#191715] dark:bg-[#A69C91] transition-all duration-500" style="width: 36%"></div>
+            </div>
+          </div>
+        </header>
+
+        <!-- SECTION 1: "WHAT MILO REALLY THINKS" (MULTI-PARAGRAPH NARRATIVE READ) -->
+        <div class="space-y-5">
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-mono uppercase tracking-widest px-3 py-1 rounded-full bg-[#F3ECE1] dark:bg-[#141210] text-[#191715] dark:text-[#F5EFE6] font-semibold">Part I • The Verdict</span>
+            <h3 class="font-serif text-3xl sm:text-4xl text-[#191715] dark:text-[#F5EFE6]">What Milo really thinks</h3>
+          </div>
+
+          <div id="miloNarrativeBody" class="space-y-5 text-base sm:text-[17px] text-[#191715]/90 dark:text-[#F5EFE6]/90 leading-[1.78] font-normal">
+            <!-- Populated dynamically by JS with inline clickable quote evidence chips -->
+          </div>
+
+          <!-- Editorial Pull-Quote Callout -->
+          <blockquote class="my-6 p-6 sm:p-8 rounded-3xl bg-[#FAF6F0] dark:bg-[#141210] border-l-4 border-[#D94E34] space-y-2">
+            <div class="text-xs font-mono uppercase tracking-widest text-[#D94E34] font-semibold">Milo's Unfiltered Bottom Line</div>
+            <p id="miloPullQuote" class="font-serif italic text-2xl sm:text-3xl text-[#191715] dark:text-[#F5EFE6] leading-snug"></p>
+          </blockquote>
+        </div>
+
+        <!-- SECTION 2: "EVERYONE IN THE CHAT, READ TO FILTH" (CHARACTER PROFILES) -->
+        <div class="space-y-6 pt-4 border-t border-[#E4DDD1] dark:border-[#2E2924]">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="text-xs font-mono uppercase tracking-widest px-3 py-1 rounded-full bg-[#F3ECE1] dark:bg-[#141210] text-[#191715] dark:text-[#F5EFE6] font-semibold">Part II • The Cast</span>
+              <h3 class="font-serif text-3xl sm:text-4xl text-[#191715] dark:text-[#F5EFE6]">Everyone in the chat, profiled</h3>
+            </div>
+          </div>
+
+          <div id="characterProfilesGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Populated dynamically by JS -->
+          </div>
+        </div>
+
+        <!-- SECTION 3: SUPERLATIVE AWARDS ("THE VILLAIN, THE SAINT & THE DELUSIONAL") -->
+        <div class="space-y-6 pt-4 border-t border-[#E4DDD1] dark:border-[#2E2924]">
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-mono uppercase tracking-widest px-3 py-1 rounded-full bg-[#F3ECE1] dark:bg-[#141210] text-[#191715] dark:text-[#F5EFE6] font-semibold">Part III • Superlatives</span>
+            <h3 class="font-serif text-3xl sm:text-4xl text-[#191715] dark:text-[#F5EFE6]">The Awards Nobody Asked For</h3>
+          </div>
+
+          <div id="superlativeAwardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Populated dynamically by JS -->
+          </div>
+        </div>
+
+        <!-- SECTION 4: "WHAT THEY WROTE VS. WHAT THEY ACTUALLY MEANT" (RECEIPT TRANSLATOR) -->
+        <div class="space-y-6 pt-4 border-t border-[#E4DDD1] dark:border-[#2E2924]">
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-mono uppercase tracking-widest px-3 py-1 rounded-full bg-[#F3ECE1] dark:bg-[#141210] text-[#191715] dark:text-[#F5EFE6] font-semibold">Part IV • Subtext Decoder</span>
+            <h3 class="font-serif text-3xl sm:text-4xl text-[#191715] dark:text-[#F5EFE6]">What they wrote vs. what they meant</h3>
+          </div>
+
+          <div id="subtextTranslationList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Populated dynamically by JS -->
+          </div>
+        </div>
+
+        <!-- SECTION 5: SHAREABLE REPORT CARD & EXPORT BAR -->
+        <footer class="pt-6 border-t-2 border-[#191715] dark:border-[#F5EFE6]/30 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 no-print">
+          <div>
+            <div class="font-serif text-2xl text-[#191715] dark:text-[#F5EFE6]">Send this report to the chat (if you dare).</div>
+            <p class="text-xs text-[#6E665E] dark:text-[#A69C91]">Generated 100% offline on your device by WhatMiloThinks.com</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2.5">
+            <button id="downloadStoryCardBtn" type="button" class="px-5 py-3 rounded-full bg-[#D94E34] hover:bg-[#B83B24] text-white text-xs sm:text-sm font-semibold transition shadow-md">
+              📸 Download Story Screenshot (PNG)
+            </button>
+            <button id="copyReportSummaryBtn" type="button" class="px-5 py-3 rounded-full bg-[#191715] dark:bg-[#F5EFE6] text-[#FAF6F0] dark:text-[#191715] text-xs sm:text-sm font-semibold hover:opacity-90 transition">
+              📋 Copy Verdict for Group Chat
+            </button>
+            <button onclick="window.print()" type="button" class="px-4 py-3 rounded-full bg-[#F3ECE1] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924] text-xs sm:text-sm font-semibold hover:border-[#D94E34] transition">
+              🖨️ Print / Save PDF
+            </button>
+          </div>
+        </footer>
+
+      </article>
+
+      <!-- Hidden High-DPI Story Canvas for PNG Download -->
+      <canvas id="miloStoryCanvas" width="1080" height="1440" class="hidden"></canvas>
+    </section>
+
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- WALL OF LOVE LIGHTBOX MODAL                                           -->
+  <!-- ===================================================================== -->
+  <div id="wallLightboxModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+    <div class="bg-[#FFFDF9] dark:bg-[#1D1A17] border border-[#E4DDD1] dark:border-[#2E2924] rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-5 shadow-2xl relative">
+      <button id="closeWallLightboxBtn" type="button" class="absolute top-5 right-5 w-9 h-9 rounded-full bg-[#F3ECE1] dark:bg-[#141210] text-sm font-bold flex items-center justify-center hover:bg-[#D94E34] hover:text-white transition">✕</button>
+      <div class="text-xs font-mono uppercase tracking-widest text-[#D94E34] font-semibold" id="lightboxTag">GROUP CHAT REACTION</div>
+      <h3 class="font-serif text-2xl sm:text-3xl text-[#191715] dark:text-[#F5EFE6] leading-snug" id="lightboxCaption"></h3>
+      <div class="p-4 rounded-2xl bg-[#FAF6F0] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924] space-y-2">
+        <div class="text-[10px] font-mono uppercase text-[#6E665E]">EXCERPT FROM MILO'S REPORT:</div>
+        <p class="font-serif italic text-xl text-[#191715] dark:text-[#F5EFE6]" id="lightboxMiloQuote"></p>
+      </div>
+      <div class="space-y-2" id="lightboxChatReaction"></div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- EXPORT GUIDE MODAL ("HOW TO EXPORT IN 10 SECONDS")                    -->
+  <!-- ===================================================================== -->
+  <div id="exportGuideModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+    <div class="bg-[#FFFDF9] dark:bg-[#1D1A17] border border-[#E4DDD1] dark:border-[#2E2924] rounded-3xl max-w-xl w-full p-6 sm:p-8 space-y-5 shadow-2xl relative">
+      <button id="closeExportGuideBtn" type="button" class="absolute top-5 right-5 w-9 h-9 rounded-full bg-[#F3ECE1] dark:bg-[#141210] text-sm font-bold flex items-center justify-center hover:bg-[#D94E34] hover:text-white transition">✕</button>
+      <span class="text-xs font-mono uppercase tracking-widest text-[#2E6F40] font-semibold">10-Second Export Guide</span>
+      <h3 class="font-serif text-3xl text-[#191715] dark:text-[#F5EFE6]">How to export your chat</h3>
+      <div class="space-y-3 text-xs sm:text-sm text-[#6E665E] dark:text-[#A69C91]">
+        <div class="p-3.5 rounded-2xl bg-[#FAF6F0] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924]">
+          <strong class="text-[#191715] dark:text-[#F5EFE6]">💬 WhatsApp (iOS &amp; Android):</strong> Open any chat → Tap the contact or group name at the top → Scroll down to <strong>Export Chat</strong> → Choose <strong>Without Media</strong> → Upload the <code class="font-mono">.txt</code> file here.
+        </div>
+        <div class="p-3.5 rounded-2xl bg-[#FAF6F0] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924]">
+          <strong class="text-[#191715] dark:text-[#F5EFE6]">📸 Instagram / Messenger:</strong> Settings → Accounts Center → Your Information and Permissions → Download Your Information → Messages (JSON format).
+        </div>
+        <div class="p-3.5 rounded-2xl bg-[#FAF6F0] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924]">
+          <strong class="text-[#191715] dark:text-[#F5EFE6]">💙 iMessage / Mac:</strong> Click inside any conversation on Mac Messages, press <code class="font-mono">Cmd + A</code> then <code class="font-mono">Cmd + C</code>, and paste directly into Milo's text box.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- STARTUP BLUEPRINT MODAL FOR ZED KAZI                                  -->
+  <!-- ===================================================================== -->
+  <div id="blueprintModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4 overflow-y-auto">
+    <div class="bg-[#FFFDF9] dark:bg-[#1D1A17] border border-[#E4DDD1] dark:border-[#2E2924] rounded-3xl max-w-3xl w-full p-6 sm:p-10 space-y-6 shadow-2xl relative my-8">
+      <button id="closeBlueprintBtn" type="button" class="absolute top-6 right-6 w-9 h-9 rounded-full bg-[#F3ECE1] dark:bg-[#141210] text-sm font-bold flex items-center justify-center hover:bg-[#D94E34] hover:text-white transition">✕</button>
+      <div class="space-y-1">
+        <span class="text-xs font-mono uppercase tracking-widest text-[#D94E34] font-semibold">Executive Technical &amp; GTM Blueprint • Prepared for Zed Kazi</span>
+        <h3 class="font-serif text-3xl sm:text-4xl text-[#191715] dark:text-[#F5EFE6]">Building “What Milo Thinks” as an Offline, Zero-LLM Startup</h3>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+        <div class="p-4 rounded-2xl bg-[#FAF6F0] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924] space-y-1">
+          <div class="font-mono uppercase text-[#D94E34] font-bold">1. Zero-LLM Economics</div>
+          <p class="text-[#6E665E] dark:text-[#A69C91]">WhatBrandonThinks charges ~€8.90 per full report but pays cloud LLM token fees on 100k-message uploads. Our deterministic NLG engine has a <strong>$0.00 marginal compute cost</strong> and 100% gross margin.</p>
+        </div>
+        <div class="p-4 rounded-2xl bg-[#FAF6F0] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924] space-y-1">
+          <div class="font-mono uppercase text-[#2E6F40] font-bold">2. All-Platform Offline</div>
+          <p class="text-[#6E665E] dark:text-[#A69C91]">Single codebase ships as a Web PWA, Desktop app (<strong>Tauri</strong> for macOS/Windows/Linux), and Mobile app (<strong>Capacitor / Flutter</strong> for iOS/Android) with native OS "Share Chat Export" sheet targets.</p>
+        </div>
+        <div class="p-4 rounded-2xl bg-[#FAF6F0] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924] space-y-1">
+          <div class="font-mono uppercase text-[#D9822B] font-bold">3. Absolute Privacy Moat</div>
+          <p class="text-[#6E665E] dark:text-[#A69C91]">Users hesitate to upload intimate romantic or corporate chats to OpenAI/Anthropic. Running 100% on-device in Airplane Mode turns privacy into our #1 conversion hook.</p>
+        </div>
+      </div>
+
+      <div class="p-5 rounded-2xl bg-[#FAF6F0] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924] space-y-2 text-xs sm:text-sm">
+        <div class="font-bold text-[#191715] dark:text-[#F5EFE6]">How the Deterministic Narrative Engine Works Without LLMs:</div>
+        <ul class="list-disc pl-5 space-y-1 text-[#6E665E] dark:text-[#A69C91]">
+          <li><strong>Stage 1 (Multi-App Regex/AST Parser):</strong> Normalizes WhatsApp, iMessage, Instagram, Messenger, LINE, and KakaoTalk into timestamped turn vectors in &lt;50ms.</li>
+          <li><strong>Stage 2 (Psychometric Feature Extraction):</strong> Calculates response latency asymmetry, DARVO deflection phrases, double-text spirals, hedging density (<em>"should be", "idk"</em>), and cold punctuation bombs (<em>"ok", "k"</em>).</li>
+          <li><strong>Stage 3 (Combinatorial Editorial Grammar):</strong> Slots real verbatim timestamped quotes and participant names into curated, context-aware editorial prose templates—producing human-grade wit with zero hallucination.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-[#E4DDD1] dark:border-[#2E2924] py-12 mt-16 text-xs text-[#6E665E] dark:text-[#A69C91]">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="font-serif text-xl text-[#191715] dark:text-[#F5EFE6]">What Milo Thinks</span>
+        <span>•</span>
+        <span>100% Offline Zero-LLM Chat Analysis Engine</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <button id="openBlueprintBtnFooter" type="button" class="text-[#D94E34] font-semibold hover:underline">Startup Plan for Zed Kazi</button>
+        <span>•</span>
+        <span>Your chats never leave your device.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===================================================================== -->
+  <!-- COMPLETE OFFLINE DETERMINISTIC CHAT ENGINE & INTERACTIVE DATA         -->
+  <!-- ===================================================================== -->
+  <script>
+    // =========================================================================
+    // 1. EXACT HERO SHOWCASE CONVERSATION (SATURDAY DINNER WITH JAMIE)
+    // =========================================================================
+    const HERO_JAMIE_MESSAGES = [
+      { id: 0, sender: 'You', time: '14:06', text: 'are we still on for Saturday?', noteTitle: 'The Reasonable Check-In', note: 'Asked politely at 2:06 PM on a Thursday. Clear, direct, zero drama—which makes the evasive gymnastics that follow even more glaring.' },
+      { id: 1, sender: 'You', time: '14:10', text: 'booked the table for 8 btw', noteTitle: 'Skin in the Game', note: 'A concrete reservation time. You are operating like two adults with a calendar; Jamie is operating on vibes and plausible deniability.' },
+      { id: 2, sender: 'Jamie', time: '14:14', text: 'omg sorry only just seen this 😅', noteTitle: 'The Pre-Emptive Sweat Emoji 😅', note: 'Nobody says “only just seen this” 8 minutes after a text unless they were already staring at the notification banner trying to invent an excuse.' },
+      { id: 3, sender: 'Jamie', time: '14:18', text: "it's been a crazy week", noteTitle: 'The Soft-Launch Cancellation', note: '“It’s been a crazy week” before answering a yes/no question about Saturday is groundwork being laid for a Friday 6 PM bailout.' },
+      { id: 4, sender: 'You', time: '14:18', text: 'you posted a story at 2am', noteTitle: 'Forensic Timestamp Receipt', note: 'Zero-second response time. You brought receipts to a knife fight. Never tell someone you’re too swamped to text when your Instagram story ring is glowing at 2 AM.' },
+      { id: 5, sender: 'Jamie', time: '14:22', text: "that's different lol", noteTitle: 'The Nervous “lol”', note: 'How is posting at 2 AM different from replying to a 4-second text? It isn’t. The “lol” at the end is doing panic-management.' },
+      { id: 6, sender: 'You', time: '14:26', text: 'how', noteTitle: 'One-Word Cross-Examination', note: 'Three letters, no punctuation. The most terrifying message a breadcrumber can receive.' },
+      { id: 7, sender: 'Jamie', time: '14:30', text: "ok you're being a bit much", noteTitle: 'Classic DARVO Flip', note: 'When caught red-handed without an answer for “how”, Jamie pivots to calling you “a bit much” for asking if your 8 PM dinner reservation still exists.' },
+      { id: 8, sender: 'You', time: '14:30', text: "I'm literally asking about Saturday", noteTitle: 'Refusing the Gaslight', note: 'Holding the line. You refused to apologize for asking a basic logistical question.' },
+      { id: 9, sender: 'Jamie', time: '14:34', text: 'yeah should be!!', noteTitle: 'The Double-Exclamation Hedge', note: '“Yeah should be!!” with two exclamation marks is the universal battle cry of someone keeping their Saturday night open until 6:45 PM just in case.' },
+      { id: 10, sender: 'You', time: '14:38', text: 'should be or yes', noteTitle: 'Closing the Loophole', note: 'Forcing a binary commitment out of a chronic hedger.' },
+      { id: 11, sender: 'Jamie', time: '14:42', text: 'yes 🙄 x', noteTitle: 'Eye-Roll + Kiss Whiplash', note: 'Combining “🙄” with “x” is emotional sleight of hand: punishing you for asking while keeping you on the hook.' },
+      { id: 12, sender: 'You', time: '14:42', text: 'ok', noteTitle: 'The Nuclear Lowercase “ok”', note: 'Notice how the power dynamic flips in 0.4 seconds the moment you stop chasing and drop a dry “ok”.' },
+      { id: 13, sender: 'Jamie', time: '14:46', text: "don't do the ok thing", noteTitle: 'Instant Loss-Aversion Panic', note: 'Jamie spent 36 minutes acting allergic to commitment, yet the second you pull back with “ok”, they suddenly care deeply about communication styles.' },
+      { id: 14, sender: 'Jamie', time: '14:50', text: "I'll call you after work, promise", noteTitle: 'The Future-Faking “Promise”', note: 'A double-text from Jamie! Whenever someone uses the word “promise” over text, check the historical fulfillment rate.' },
+      { id: 15, sender: 'You', time: '14:54', text: 'you said that on Tuesday', noteTitle: 'The Closing Walk-Off Receipt', note: 'Case closed. No notes. Put this in the Louvre.' }
+    ];
+
+    // =========================================================================
+    // 2. ALL 12 INTERACTIVE CATEGORY PILLS + REALISTIC SAMPLE CHATS
+    // =========================================================================
+    const TWELVE_CATEGORIES = [
+      {
+        id: 'situationship',
+        pill: '🫠 The situationship',
+        badge: '🫠 THE SITUATIONSHIP',
+        defaultPerspective: 'You',
+        transcript: `[14/10/24, 14:06] You: are we still on for Saturday?
+[14/10/24, 14:10] You: booked the table for 8 btw
+[14/10/24, 14:14] Jamie: omg sorry only just seen this 😅
+[14/10/24, 14:18] Jamie: it's been a crazy week
+[14/10/24, 14:18] You: you posted a story at 2am
+[14/10/24, 14:22] Jamie: that's different lol
+[14/10/24, 14:26] You: how
+[14/10/24, 14:30] Jamie: ok you're being a bit much
+[14/10/24, 14:30] You: I'm literally asking about Saturday
+[14/10/24, 14:34] Jamie: yeah should be!!
+[14/10/24, 14:38] You: should be or yes
+[14/10/24, 14:42] Jamie: yes 🙄 x
+[14/10/24, 14:42] You: ok
+[14/10/24, 14:46] Jamie: don't do the ok thing
+[14/10/24, 14:50] Jamie: I'll call you after work, promise
+[14/10/24, 14:54] You: you said that on Tuesday`
+      },
+      {
+        id: 'friendgroup',
+        pill: '🍻 The friend group',
+        badge: '🍻 THE FRIEND GROUP',
+        defaultPerspective: 'Arjun',
+        transcript: `[02/11/24, 19:10] Arjun: Boys. Goa flights for Dec 14-18 are ₹6,200 return right now. I updated the Google Sheet with 3 villas in Assagao.
+[02/11/24, 19:11] Arjun: Lock in tonight before prices double. @Kabir @Rohan @Dev
+[02/11/24, 19:14] Dev: LETS GOOOOO 🐐🍻 THIS IS THE YEAR WE ACTUALLY MAKE IT OUT OF THE GROUP CHAT!!
+[02/11/24, 19:40] Arjun: Class. Deposit is ₹4,500 each. Send to my UPI by 10pm.
+[02/11/24, 23:18] Dev: bro crazy week at work, will send first thing tomorrow morning promise lol
+[03/11/24, 10:15] Arjun: @Kabir you still owe me ₹2,800 on Splitwise from last year's Lonavala trip btw. Plus ₹4,500 for the villa.
+[03/11/24, 16:45] Kabir: lol
+[03/11/24, 16:47] Arjun: "lol" is not a bank transfer Kabir. Are you in or out?
+[03/11/24, 21:20] Dev: guys actually my cousin's engagement might be that weekend idk if i can make it, should be fine tho maybe
+[03/11/24, 21:22] Arjun: You screamed LETS GOOOOO 26 hours ago Dev.
+[03/11/24, 21:25] Arjun: @Rohan you have read every message and said zero words in 14 attempts to plan Goa.
+[04/11/24, 01:12] Rohan: 👍
+[04/11/24, 01:14] Arjun: Fourteen spreadsheets. Zero boarding passes. I'm going solo.`
+      },
+      {
+        id: 'relationship',
+        pill: '❤️‍🔥 Your relationship',
+        badge: '❤️‍🔥 YOUR RELATIONSHIP',
+        defaultPerspective: 'Maya',
+        transcript: `[11/11/24, 18:05] Maya: hey love, what do you want to do for dinner tonight? i can cook pasta or we can order Thai
+[11/11/24, 18:42] Sam: idk whatever you want is fine!!
+[11/11/24, 18:44] Maya: okay let's get Thai from Baan Tao!
+[11/11/24, 18:45] Sam: oh i had noodles for lunch actually lol maybe not Thai
+[11/11/24, 18:46] Maya: okay how about Mexican tacos?
+[11/11/24, 18:55] Sam: hmm my stomach is a bit weird for spicy food tonight sorry 😅
+[11/11/24, 18:56] Maya: Sam you literally said "whatever you want" ten minutes ago and vetoed two continents
+[11/11/24, 19:01] Sam: ok you're being a bit much i'm just saying!!
+[11/11/24, 19:02] Maya: i'm ordering pizza. do not speak to me until the garlic bread arrives
+[11/11/24, 19:04] Sam: oooh can we get jalapenos on half ❤️ x`
+      },
+      {
+        id: 'family',
+        pill: '🏡 The family group',
+        badge: '🏡 THE FAMILY GROUP',
+        defaultPerspective: 'Tara',
+        transcript: `[12/11/24, 06:04] Mummy: 🌺🙏 GOOD MORNING HAPPY TUESDAY FAMILY!! DRINK WARM TURMERIC WATER IMMEDIATELY IT BLOCKS 5G RADIATION IN KIDNEYS FORWARDED AS RECEIVED 🙏🌺
+[12/11/24, 06:45] Papa: 👍
+[12/11/24, 08:12] Mummy: ROHIT WHY ARE YOU NOT PICKING PHONE SINCE 10 MINUTES
+[12/11/24, 08:13] Mummy: PAPA FORGOT NETFLIX PASSWORD AGAIN HOW TO RESET
+[12/11/24, 09:30] Tara: Mummy please turn off CAPS LOCK it feels like you're shouting at my cereal. Also @Rohit did you take my good Borosil glass tiffin again??
+[12/11/24, 14:15] Rohit: chill it's just plastic tupperware lol
+[12/11/24, 14:16] Tara: IT IS OVEN SAFE BOROSIL GLASS ROHIT. Mummy tell your golden child to return my kitchenware!!
+[12/11/24, 14:20] Mummy: Don't fight children!! Both of you come for Sunday lunch I am making mutton biryani 🍝🎂
+[12/11/24, 18:10] Rohit: should be there!!`
+      },
+      {
+        id: 'ex',
+        pill: '🥀 Your ex',
+        badge: '🥀 YOUR EX',
+        defaultPerspective: 'Nadia',
+        transcript: `[18/11/24, 01:42] Liam: hey stranger
+[18/11/24, 01:44] Liam: just heard that Phoebe Bridgers song in an Uber and thought of you lol hope you're well
+[18/11/24, 09:15] Nadia: Liam it is 1:44 AM and we broke up seven months ago
+[18/11/24, 12:30] Liam: omg sorry didn't mean anything weird by it!! just wanted to return your grey hoodie
+[18/11/24, 12:32] Nadia: you can leave it with the building concierge any day between 9 and 5
+[18/11/24, 16:50] Liam: yeah should be free Thursday night!! maybe we could grab a quick drink when i drop it off?
+[18/11/24, 16:52] Nadia: the concierge doesn't drink Liam. leave the hoodie at the desk
+[18/11/24, 17:10] Liam: ok you're still so cold lol nvm`
+      },
+      {
+        id: 'work',
+        pill: '💼 The work chat',
+        badge: '💼 THE WORK CHAT',
+        defaultPerspective: 'Elena',
+        transcript: `[10/11/24, 21:42] Marcus (Accounts): Hi @Elena, hope you're having a lovely Sunday evening! 🙂 Just circling back on the Q4 client deck?
+[10/11/24, 21:44] Marcus (Accounts): No rush at all, just need it in my inbox by 8:00 AM Monday morning! Appreciate you! 🙂
+[10/11/24, 22:10] Elena: Hi Marcus, per my last message on Friday at 3 PM, we are still waiting on the revenue table from your team before we can export slides.
+[10/11/24, 22:18] Marcus (Accounts): Let's not get bogged down in finger-pointing Elena 😅 Can you just mock up placeholder numbers for now? Should be quick!!
+[10/11/24, 22:20] Chloe: (DM to Elena) Did this man just say "no rush" at 9:44 PM on a Sunday with an 8 AM deadline and a 🙂 emoji?? That's literally his entire personality
+[10/11/24, 22:25] Elena: Uploaded v12_FINAL.pdf to Drive.
+[11/11/24, 13:40] Marcus (Accounts): ok thanks`
+      },
+      {
+        id: 'crush',
+        pill: '👀 Your crush',
+        badge: '👀 YOUR CRUSH',
+        defaultPerspective: 'Zoya',
+        transcript: `[15/11/24, 20:10] Zoya: wait was that you at Blue Tokai this morning in the green jacket??
+[15/11/24, 20:11] Zoya: i was going to say hi but you had headphones on and looked locked into your laptop haha
+[15/11/24, 20:14] Leo: wait stop why didn't you interrupt me!! i was literally pretending to work so i didn't have to talk to my coworker
+[15/11/24, 20:15] Leo: next time throw a croissant at my head pls
+[15/11/24, 20:18] Zoya: noted 📝 i owe you one airborne almond croissant then
+[15/11/24, 20:20] Leo: are you going to be there Thursday morning? i'll leave my headphones at home on purpose 👀`
+      },
+      {
+        id: 'bestfriend',
+        pill: '👯 Your best friend',
+        badge: '👯 YOUR BEST FRIEND',
+        defaultPerspective: 'Rhea',
+        transcript: `[14/11/24, 23:50] Ananya: DO NOT TEXT HIM BACK. PUT THE PHONE IN THE FRIDGE.
+[14/11/24, 23:52] Rhea: i didn't even say i was going to text him!!
+[14/11/24, 23:53] Ananya: Rhea i have known you since 2016. When you go quiet after 11pm it means you are drafting a 400-word paragraph to a man who owns one pillowcase
+[14/11/24, 23:55] Rhea: okay he actually bought a second pillowcase last month lol
+[14/11/24, 23:56] Ananya: I have been telling you since October that "yeah should be!!" means no. Send me a screenshot of your draft right now so i can delete it for you`
+      },
+      {
+        id: 'talkingstage',
+        pill: '📱 The talking stage',
+        badge: '📱 THE TALKING STAGE',
+        defaultPerspective: 'Hannah',
+        transcript: `[13/11/24, 19:05] Hannah: okay serious question: top 3 pasta shapes, ranked. your answer determines if we get a second date
+[13/11/24, 22:45] Dan: haha love pasta!! hbu
+[13/11/24, 22:48] Hannah: Dan "love pasta" is not a shape. give me rigatoni, pappardelle, something!! what do you actually do on weekends?
+[14/11/24, 02:10] Dan: mostly just chill w the boys lol u?
+[14/11/24, 09:00] Hannah: my back hurts from carrying this conversation up a mountain`
+      },
+      {
+        id: 'longdistance',
+        pill: '✈️ Long-distance',
+        badge: '✈️ LONG-DISTANCE',
+        defaultPerspective: 'Kiran',
+        transcript: `[14/11/24, 08:30] Kiran: good morning from Mumbai ☀️ just landed at work, miss you already. call me when you wake up in London?
+[14/11/24, 14:15] Noah: morning baby!! sorry crazy morning on the tube, running into back-to-back meetings till 6pm UK time 😭
+[14/11/24, 14:18] Kiran: wait 6pm your time is 11:30pm here, we missed our FaceTime window three days in a row now
+[14/11/24, 18:45] Noah: i know i'm so sorry love!! i'll call you right after dinner, promise ❤️
+[14/11/24, 23:58] Kiran: i stayed awake until midnight and you're still at the pub aren't you
+[15/11/24, 03:10] Noah: omg sorry phone died!!`
+      },
+      {
+        id: 'newone',
+        pill: '🦋 The new one',
+        badge: '🦋 THE NEW ONE',
+        defaultPerspective: 'Claire',
+        transcript: `[16/11/24, 11:20] Julian: Good morning! I went ahead and booked that corner table at Lurra for Friday at 7:30 PM so you don't have to worry about it.
+[16/11/24, 11:22] Claire: wait you actually booked a place with a time and a confirmation number without saying "idk whatever you want"??
+[16/11/24, 11:24] Claire: what's the catch are you an organ harvester
+[16/11/24, 11:26] Julian: Haha no organs required, I just really liked talking to you on Tuesday and wanted to lock in Friday properly.`
+      },
+      {
+        id: 'married',
+        pill: '💍 Married',
+        badge: '💍 MARRIED',
+        defaultPerspective: 'Sarah',
+        transcript: `[15/11/24, 17:12] Sarah: Can you pick up oat milk, coriander, and dishwasher tablets on the way home?
+[15/11/24, 17:14] Ben: 👍
+[15/11/24, 17:45] Ben: Wait fresh coriander or the seeds
+[15/11/24, 17:45] Sarah: Ben we have been married for six years when have I ever asked for emergency coriander seeds on a Friday evening
+[15/11/24, 17:48] Ben: Fair point. Also I bought rotisserie chicken and two chocolate eclairs because I love you
+[15/11/24, 17:49] Sarah: All sins forgiven hurry home ❤️`
+      }
+    ];
+
+    // =========================================================================
+    // 3. WALL OF LOVE DATA (EXACT STORIES FROM WHATBRANDONTHINKS.COM)
+    // =========================================================================
+    const WALL_OF_LOVE_ITEMS = [
+      {
+        tag: 'WHATSAPP GROUP • 4 FRIENDS',
+        caption: 'A friends’ WhatsApp group exposed by their report for planning Goa fourteen times and never making it past the spreadsheet.',
+        miloQuote: '“Arjun has built fourteen Notion itineraries for men who treat a ₹4,500 villa deposit like a hostage negotiation. Nobody in this chat is buying a plane ticket.”',
+        reactions: [
+          'Arjun: “Fourteen spreadsheets zero boarding passes” I feel personally attacked 💀',
+          'Dev: Why did Milo clock my cousin’s engagement excuse in paragraph one 😭😭',
+          'Kabir: Even the AI knows I haven’t opened Splitwise since 2023'
+        ]
+      },
+      {
+        tag: 'INSTAGRAM DM • 1:14 AM',
+        caption: 'An Instagram DM from a woman who read her situationship report at 1am — “Milo clocked him in paragraph two.”',
+        miloQuote: '“‘Yeah should be!!’ with two exclamation marks is the national anthem of a man keeping his Saturday open until 6:45 PM.”',
+        reactions: [
+          'Her: I literally gasped out loud in bed at 1am.',
+          'Her: Milo said more in 400 words than my therapist has in six months.'
+        ]
+      },
+      {
+        tag: 'SUNDAY LEAGUE FOOTBALL WHATSAPP',
+        caption: 'A Sunday league football WhatsApp group roasting each other over their report, quoting its “villain of the group” verdict.',
+        miloQuote: '“Karan contributes 3% of the words, 0% of the match fees, and 100% of the ‘👍’ reactions at 1 AM.”',
+        reactions: [
+          'Gaffer: Changing the group name to “Villain of the Group FC” immediately 😂',
+          'Karan: 👍'
+        ]
+      },
+      {
+        tag: 'BEST FRIENDS ON WHATSAPP',
+        caption: 'Two best friends on WhatsApp as the situationship report says what the bestie has said since October.',
+        miloQuote: '“When someone replies ‘ok you’re being a bit much’ to a dinner reservation time, you are not dating—you are being managed.”',
+        reactions: [
+          'Bestie: PRINT THIS OUT AND FRAME IT ABOVE YOUR BED.',
+          'Bestie: I have literally said this word for word since October!!'
+        ]
+      },
+      {
+        tag: 'FAMILY WHATSAPP GROUP',
+        caption: 'A big family WhatsApp group in fits of laughter at their report, Mummy saying it’s scarily accurate.',
+        miloQuote: '“Mummy types exclusively in nuclear CAPS LOCK while Rohit treats stolen Borosil glassware like a Geneva Convention dispute.”',
+        reactions: [
+          'Mummy: VERY ACCURATE REPORT BETA FORWARD TO MAUSI ALSO 😂🙏',
+          'Tara: Notice how Rohit still hasn’t returned the tiffin!!'
+        ]
+      },
+      {
+        tag: 'WORK FRIENDS ON IMESSAGE',
+        caption: 'Two work friends on iMessage decoding a coworker from accounts with the report: “that’s literally his entire personality.”',
+        miloQuote: '“Every ‘no rush at all 🙂’ sent at 9:44 PM on a Sunday is an act of corporate psychological warfare.”',
+        reactions: [
+          'Chloe: “Corporate psychological warfare with a 🙂 emoji” THAT IS LITERALLY HIS ENTIRE PERSONALITY',
+          'Elena: Tempted to attach this PDF to the Q4 deck tomorrow at 8am'
+        ]
+      }
+    ];
+
+    // =========================================================================
+    // 4. DETERMINISTIC ZERO-LLM PARSER & EDITORIAL NLG ENGINE
+    // =========================================================================
+    const HEDGE_WORDS_REGEX = /\b(should be|maybe|idk|not sure|might|we'll see|gotta see|crazy week|busy week|probably)\b/gi;
+    const DARVO_REGEX = /\b(you're being a bit much|bit much|chill|calm down|that's different|too sensitive|overreacting|finger-pointing|blame game)\b/gi;
+    const APOLOGY_REGEX = /\b(sorry|my bad|apologies|oops|promise)\b/gi;
+    const COLD_SHORT_SET = new Set(['ok', 'k', 'kk', 'lol', '👍', '🙂', 'fine', 'sure', 'nvm']);
+
+    let currentPerspective = 'Auto';
+    let currentCategoryKey = 'situationship';
+    let currentReportObj = null;
+    let totalMessagesCounterVal = 1482910450;
+    let totalReportsCounterVal = 894320;
+
+    function parseChatTranscript(rawText) {
+      const trimmed = (rawText || '').trim();
+      if (!trimmed) return { format: 'EMPTY', messages: [] };
+
+      // 1. JSON Format (Instagram / Messenger)
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          const arr = Array.isArray(parsed) ? parsed : (parsed.messages || []);
+          const msgs = [];
+          arr.forEach((m, idx) => {
+            const sender = m.sender_name || m.from || m.author || 'Participant';
+            const text = m.content || m.text || '';
+            if (sender && text) {
+              const d = m.timestamp_ms ? new Date(m.timestamp_ms) : new Date(Date.now() + idx * 120000);
+              msgs.push({
+                sender: String(sender).trim(),
+                text: String(text).trim(),
+                timeStr: d.toTimeString().slice(0, 5),
+                mins: Math.floor(d.getTime() / 60000),
+                hour: d.getHours()
+              });
+            }
+          });
+          if (msgs.length >= 2) return { format: 'INSTAGRAM / JSON', messages: msgs };
+        } catch (e) {}
+      }
+
+      // 2. Line-by-line WhatsApp / iMessage / Raw Text
+      const lines = trimmed.split(/\r?\n/);
+      const messages = [];
+      let detectedFormat = 'WHATSAPP / TEXT';
+      let rollingMins = 840; // 14:00 default
+
+      const bracketWa = /^\[?(?:(\d{1,4}[\/\.\-]\d{1,2}[\/\.\-]\d{1,4}),?\s*)?(\d{1,2}:\d{2}(?::\d{2})?(?:\s*[APap][Mm])?)\]?\s*(?:-\s*)?([^:]+?):\s*(.+)$/;
+      const simpleLine = /^([A-Za-z0-9 _\-\(\)\.]{2,26}):\s*(.+)$/;
+
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line) continue;
+
+        const m1 = line.match(bracketWa);
+        if (m1) {
+          const timePart = m1[2].trim();
+          const sender = m1[3].trim();
+          const text = m1[4].trim();
+          const tParts = timePart.match(/(\d{1,2}):(\d{2})\s*([APap][Mm])?/);
+          let hr = 14, mn = 0;
+          if (tParts) {
+            hr = parseInt(tParts[1], 10);
+            mn = parseInt(tParts[2], 10);
+            const mer = (tParts[3] || '').toUpperCase();
+            if (mer === 'PM' && hr < 12) hr += 12;
+            if (mer === 'AM' && hr === 12) hr = 0;
+          }
+          const totalM = hr * 60 + mn;
+          rollingMins = totalM >= rollingMins ? totalM : rollingMins + 4;
+          messages.push({ sender, text, timeStr: timePart, mins: rollingMins, hour: hr });
+          continue;
+        }
+
+        const m2 = line.match(simpleLine);
+        if (m2) {
+          if (messages.length === 0) detectedFormat = 'RAW CHAT LOG';
+          rollingMins += 4;
+          const hr = Math.floor((rollingMins % 1440) / 60);
+          const mn = rollingMins % 60;
+          messages.push({
+            sender: m2[1].trim(),
+            text: m2[2].trim(),
+            timeStr: `${String(hr).padStart(2, '0')}:${String(mn).padStart(2, '0')}`,
+            mins: rollingMins,
+            hour: hr
+          });
+        } else if (messages.length > 0) {
+          messages[messages.length - 1].text += ' ' + line;
+        }
+      }
+
+      return { format: detectedFormat, messages };
+    }
+
+    function generateMiloEditorialReport(rawText, categoryKey, perspectiveName) {
+      const t0 = performance.now();
+      const parsed = parseChatTranscript(rawText);
+      const msgs = parsed.messages;
+      if (msgs.length < 2) return null;
+
+      const bySender = {};
+      const subtextTranslations = [];
+      let prev = null;
+
+      msgs.forEach((m) => {
+        if (!bySender[m.sender]) {
+          bySender[m.sender] = {
+            name: m.sender,
+            msgCount: 0,
+            wordCount: 0,
+            doubleTexts: 0,
+            questions: 0,
+            hedges: 0,
+            darvoCount: 0,
+            apologies: 0,
+            coldCount: 0,
+            capsCount: 0,
+            lateNightCount: 0,
+            replyGaps: [],
+            quotes: [],
+            signatureQuote: m.text,
+            signatureTime: m.timeStr
+          };
+        }
+
+        const p = bySender[m.sender];
+        const clean = m.text.trim();
+        const words = clean.split(/\s+/).filter(Boolean);
+        const lowerNoPunct = clean.toLowerCase().replace(/[\.\!\?]+$/g, '');
+
+        p.msgCount += 1;
+        p.wordCount += words.length;
+        p.quotes.push({ text: clean, time: m.timeStr });
+
+        if (clean.includes('?') || /^(how|what|why|when|should be or yes|are we)/i.test(clean)) {
+          p.questions += 1;
+        }
+        if (m.hour >= 23 || m.hour <= 4) {
+          p.lateNightCount += 1;
+        }
+
+        // Check hedges
+        const hMatches = clean.match(HEDGE_WORDS_REGEX);
+        if (hMatches) {
+          p.hedges += hMatches.length;
+          p.signatureQuote = clean;
+          p.signatureTime = m.timeStr;
+          subtextTranslations.push({
+            sender: m.sender,
+            time: m.timeStr,
+            said: clean,
+            meant: decodeSubtextMeaning(clean, 'hedge', m.sender)
+          });
+        }
+
+        // Check DARVO / Deflection
+        const dMatches = clean.match(DARVO_REGEX);
+        if (dMatches) {
+          p.darvoCount += dMatches.length;
+          p.signatureQuote = clean;
+          p.signatureTime = m.timeStr;
+          subtextTranslations.push({
+            sender: m.sender,
+            time: m.timeStr,
+            said: clean,
+            meant: decodeSubtextMeaning(clean, 'darvo', m.sender)
+          });
+        }
+
+        // Check Apologies / Promises
+        const aMatches = clean.match(APOLOGY_REGEX);
+        if (aMatches) {
+          p.apologies += aMatches.length;
+          if (/promise|only just seen/i.test(clean)) {
+            subtextTranslations.push({
+              sender: m.sender,
+              time: m.timeStr,
+              said: clean,
+              meant: decodeSubtextMeaning(clean, 'apology', m.sender)
+            });
+          }
+        }
+
+        // Check Cold / One-Word Bombs
+        if (COLD_SHORT_SET.has(lowerNoPunct) || (words.length === 1 && clean.length <= 4)) {
+          p.coldCount += 1;
+          subtextTranslations.push({
+            sender: m.sender,
+            time: m.timeStr,
+            said: clean,
+            meant: decodeSubtextMeaning(clean, 'cold', m.sender)
+          });
+        }
+
+        // CAPS check
+        const letters = clean.replace(/[^a-zA-Z]/g, '');
+        if (letters.length >= 10 && letters === letters.toUpperCase()) {
+          p.capsCount += 1;
+        }
+
+        if (prev) {
+          if (prev.sender === m.sender) {
+            p.doubleTexts += 1;
+          } else {
+            const gap = Math.max(1, m.mins - prev.mins);
+            p.replyGaps.push(gap);
+          }
+        }
+        prev = m;
+      });
+
+      const totalWords = Object.values(bySender).reduce((s, x) => s + x.wordCount, 0) || 1;
+      const participants = Object.values(bySender).map(p => {
+        const wordShare = Math.round((p.wordCount / totalWords) * 100);
+        const avgWords = +(p.wordCount / p.msgCount).toFixed(1);
+        const avgGapMins = p.replyGaps.length
+          ? Math.round(p.replyGaps.reduce((a, b) => a + b, 0) / p.replyGaps.length)
+          : 4;
+
+        // Assign Milo Character Archetype & Personal Profile
+        const profile = buildParticipantEditorialProfile(p, wordShare, avgWords, avgGapMins, categoryKey);
+        return {
+          ...p,
+          wordShare,
+          avgWords,
+          avgGapMins,
+          ...profile
+        };
+      });
+
+      // Sort participants by wordShare descending
+      participants.sort((a, b) => b.wordShare - a.wordShare);
+
+      const primaryFocus = (perspectiveName && bySender[perspectiveName])
+        ? participants.find(x => x.name === perspectiveName)
+        : participants[0];
+      const counterpart = participants.find(x => x.name !== primaryFocus.name) || participants[0];
+
+      // Ensure at least 4 rich subtext translations
+      if (subtextTranslations.length < 4) {
+        msgs.slice(0, 6).forEach(m => {
+          if (subtextTranslations.length < 4 && !subtextTranslations.some(s => s.said === m.text)) {
+            subtextTranslations.push({
+              sender: m.sender,
+              time: m.timeStr,
+              said: m.text,
+              meant: decodeSubtextMeaning(m.text, 'general', m.sender)
+            });
+          }
+        });
+      }
+
+      // Build Editorial Title, Narrative Paragraphs & Superlatives
+      const narrative = composeMiloNarrative(categoryKey, participants, primaryFocus, counterpart, msgs);
+      const superlatives = computeSuperlatives(participants, primaryFocus, counterpart);
+
+      const elapsedMs = Math.max(0.4, +(performance.now() - t0).toFixed(1));
+
+      return {
+        format: parsed.format,
+        elapsedMs,
+        categoryKey,
+        totalMsgs: msgs.length,
+        totalWords,
+        participants,
+        primaryFocus,
+        counterpart,
+        narrative,
+        superlatives,
+        subtextTranslations: subtextTranslations.slice(0, 4)
+      };
+    }
+
+    function decodeSubtextMeaning(quote, kind, sender) {
+      const q = quote.toLowerCase();
+      if (q.includes('should be')) {
+        return `“I want credit for saying yes right now while preserving legal immunity if a shinier plan appears at 6:30 PM on Saturday.”`;
+      }
+      if (q.includes('only just seen')) {
+        return `“I read this on my lock screen 11 minutes ago, panicked, stared at the ceiling, and added a sweat emoji so you can’t get mad.”`;
+      }
+      if (q.includes('crazy week')) {
+        return `“I am pre-heating the oven for a last-minute cancellation so that when I bail, I look exhausted rather than flaky.”`;
+      }
+      if (q.includes('that\'s different')) {
+        return `“You caught me red-handed with a 2 AM Instagram timestamp and my brain is currently buffering for a defense.”`;
+      }
+      if (q.includes('bit much') || q.includes('chill')) {
+        return `“I don’t have a good answer to your completely reasonable question, so I’m going to critique your tone instead.”`;
+      }
+      if (q.includes('don\'t do the ok thing')) {
+        return `“Wait—I only enjoy being evasive while you’re chasing me. Your two-letter ‘ok’ just triggered my abandonment alarm.”`;
+      }
+      if (q.includes('promise')) {
+        return `“I am buying 4 hours of peace right now using a word that has a 0% historical redemption rate since Tuesday.”`;
+      }
+      if (q.includes('no rush') || q.includes('🙂')) {
+        return `“There is an extreme, career-threatening rush, and this smiley face is a hostage note.”`;
+      }
+      if (q === 'ok' || q === 'k' || q === '👍' || q === 'lol') {
+        return `“I am deploying maximum emotional minimalism—either to end the argument or to avoid paying my Splitwise balance.”`;
+      }
+      if (kind === 'hedge') {
+        return `“${sender} is wrapping a non-answer in bubble wrap so nobody can pin them down to a calendar time.”`;
+      }
+      if (kind === 'darvo') {
+        return `“Classic conversational judo: flipping a factual question into an accusation that you’re overreacting.”`;
+      }
+      return `“On the surface it looks polite; underneath, ${sender} is negotiating for leverage in the thread.”`;
+    }
+
+    function buildParticipantEditorialProfile(p, wordShare, avgWords, avgGapMins, categoryKey) {
+      let archetype = 'The Direct Prosecutorial Texter';
+      let motive = 'Wants a straight answer, a confirmed calendar slot, and zero exclamation-mark theatre.';
+      let personalRead = '';
+
+      if (p.hedges >= 1 && p.darvoCount >= 1) {
+        archetype = 'The Breadcrumb Escape Artist';
+        motive = 'Keeping every option open until Friday night while allergic to looking like the bad guy.';
+        personalRead = `${p.name} texts like a politician at a press conference. With ${p.hedges} hedging phrase(s) and ${p.darvoCount} deflection maneuver(s), they specialize in combining warm punctuation (“!!”, “😅”, “x”) with zero actual commitment—until the other person pulls back, at which point ${p.name} immediately panics and double-texts.`;
+      } else if (p.capsCount >= 2) {
+        archetype = 'The CAPS LOCK Town Crier';
+        motive = 'Immediate family compliance, WhatsApp health compliance, and Sunday lunch attendance.';
+        personalRead = `${p.name} treats the keyboard like a megaphone and every unreturned phone call like a national emergency. Yet beneath the all-caps chaos is the only person actually feeding everyone.`;
+      } else if (p.msgCount <= 2 && p.coldCount >= 1) {
+        archetype = 'The Phantom “👍” Lurker';
+        motive = 'Reading every single message from the shadows while contributing zero words or deposits.';
+        personalRead = `${p.name} is a forensic ghost. Averaging ${avgWords} words per message (${wordShare}% of the chat), they watch 45 minutes of group chaos unfold and drop a single reaction like a diplomat stamping a visa.`;
+      } else if (categoryKey === 'friendgroup' && p.doubleTexts >= 2) {
+        archetype = 'The Chief Delusion Officer (Spreadsheet Division)';
+        motive = 'Single-handedly dragging four grown adults to the airport by sheer force of UPI reminders.';
+        personalRead = `${p.name} is carrying ${wordShare}% of the logistical burden, building itineraries, and chasing Splitwise debts from last fiscal year. Admirable, heroic, and 98% doomed.`;
+      } else if (p.questions >= 2) {
+        archetype = 'The No-Nonsense Receipt Collector';
+        motive = 'Cutting through vague “should be” fluff to find out if Saturday dinner actually exists.';
+        personalRead = `${p.name} does not let a contradiction slide. When handed a vague excuse, ${p.name} counters with timestamps (“you posted a story at 2am”) and binary follow-ups (“should be or yes”). Speaks ${wordShare}% of the words and holds the moral high ground.`;
+      } else {
+        archetype = 'The Vibe-Based Improviser';
+        motive = 'Floating through the thread on pure enthusiasm until concrete logistics are required.';
+        personalRead = `${p.name} accounts for ${wordShare}% of the chat volume (${avgWords} words/turn). High energy in the opening act, mysteriously hard to reach when the bill or deadline arrives.`;
+      }
+
+      return { archetype, motive, personalRead };
+    }
+
+    function composeMiloNarrative(categoryKey, participants, focus, other, msgs) {
+      const fQuote = focus.quotes[0] ? focus.quotes[0] : { text: focus.signatureQuote, time: focus.signatureTime };
+      const oQuote = other.quotes.find(q => /should be|crazy week|different|bit much|lol|ok|no rush/i.test(q.text)) || other.quotes[0] || { text: other.signatureQuote, time: other.signatureTime };
+      const lastMsg = msgs[msgs.length - 1];
+
+      let title = `The Anatomy of a “Should Be”: ${focus.name} Wants a Plan, ${other.name} Wants an Alibi`;
+      let deck = `Milo read all ${msgs.length} messages between ${participants.map(p => p.name).join(', ')}. One person brought a calendar; the other brought sweat emojis and plausible deniability.`;
+      let pullQuote = `“When someone answers a Saturday dinner reservation with ‘yeah should be!!’ and calls you ‘a bit much’ for noticing their 2 AM story, you aren’t planning a date—you’re cross-examining a flight risk.”`;
+
+      if (categoryKey === 'friendgroup') {
+        title = `Fourteen Spreadsheets and Zero Boarding Passes: Inside ${focus.name}’s Hostage Negotiation`;
+        deck = `A forensic autopsy of a friend group that screams “LET'S GOOOO” on Tuesday night and vanishes the moment a ₹4,500 deposit is mentioned.`;
+        pullQuote = `“Every friend group has one unpaid travel agent begging for UPI transfers while the rest of the chat replies with ‘lol’, ‘👍’, and sudden family emergencies.”`;
+      } else if (categoryKey === 'family') {
+        title = `Caps Lock, Turmeric Water & Stolen Borosil: A Tuesday Morning in the Family Chat`;
+        deck = `Between 6 AM WhatsApp forwards and sibling kitchenware warfare, Milo unpacks the unspoken hierarchy of your family group.`;
+        pullQuote = `“Nobody transitions from 5G kidney warnings to mutton biryani invitations faster than an Indian family WhatsApp group.”`;
+      } else if (categoryKey === 'work') {
+        title = `“No Rush At All 🙂”: Sunday Night Slack Warfare & Corporate Translation`;
+        deck = `Milo decodes the passive-aggressive smiley faces, 8 AM ambushes, and “per my last message” paper trails.`;
+        pullQuote = `“A ‘🙂’ emoji attached to a Sunday 9:44 PM request is the corporate equivalent of a brick through your living room window.”`;
+      } else if (categoryKey === 'crush' || categoryKey === 'newone' || categoryKey === 'married') {
+        title = `Wait—Is This Actually Healthy? Milo Audits a Rare Green-Flag Thread`;
+        deck = `Low latency, matched enthusiasm, and concrete plans. Milo looked for red flags and mostly found mutual effort.`;
+        pullQuote = `“Whether it’s booking a Friday table without being asked or coming home with emergency chocolate eclairs, the receipts here are refreshingly green.”`;
+      }
+
+      const p1 = `Let’s start with the basic geometry of this conversation, because the numbers tell the story before we even look at the excuses. Across ${msgs.length} messages, <strong>${focus.name}</strong> is driving the clarity—asking direct questions like <span class="evidence-chip" data-quote="${escapeAttr(fQuote.text)}">“${escapeHtml(fQuote.text.slice(0, 42))}” [${fQuote.time}]</span> and putting real logistics on the table. On the other side of the screen, <strong>${other.name}</strong> (${other.wordShare}% of total words) is operating in a completely different genre: ${other.archetype}.`;
+
+      const p2 = `Look closely at how <strong>${other.name}</strong> handles a straightforward question. Instead of a clean yes or no, we get classic conversational smoke grenades like <span class="evidence-chip" data-quote="${escapeAttr(oQuote.text)}">“${escapeHtml(oQuote.text.slice(0, 46))}” [${oQuote.time}]</span>. ${other.hedges > 0 ? `Milo counted <strong>${other.hedges} hedging marker(s)</strong> designed to keep their schedule liquid.` : ''} ${other.darvoCount > 0 ? `And the moment ${focus.name} points out the obvious contradiction, ${other.name} pivots to <strong>${other.darvoCount} deflection/gaslight move(s)</strong>—trying to make ${focus.name} feel unreasonable for simply reading the clock.` : ''}`;
+
+      const p3 = `The most revealing moment in the entire transcript happens at the end. After spending the whole thread rationing out effort, watch what happens when the energy shifts around <span class="evidence-chip" data-quote="${escapeAttr(lastMsg.text)}">“${escapeHtml(lastMsg.text.slice(0, 48))}” [${lastMsg.timeStr}]</span>. In any chat, the person who cares less holds the leverage—until the person carrying the conversation stops chasing and drops a two-letter reply. That’s when the “promises” and double-texts suddenly appear.`;
+
+      return { title, deck, pullQuote, paragraphs: [p1, p2, p3] };
+    }
+
+    function computeSuperlatives(participants, focus, other) {
+      const hedger = [...participants].sort((a, b) => (b.hedges + b.darvoCount) - (a.hedges + a.darvoCount))[0];
+      const carrier = [...participants].sort((a, b) => b.wordShare - a.wordShare)[0];
+      const coldest = [...participants].sort((a, b) => b.coldCount - a.coldCount)[0];
+      const apologizer = [...participants].sort((a, b) => b.apologies - a.apologies)[0];
+
+      return [
+        {
+          icon: '🎭',
+          award: 'Chief Hedge Architect',
+          winner: hedger.name,
+          reason: `${hedger.hedges + hedger.darvoCount} evasive or deflecting turns clocked in a single sitting.`
+        },
+        {
+          icon: '🏋️',
+          award: 'Carrying the Back-Bone',
+          winner: carrier.name,
+          reason: `Wrote ${carrier.wordShare}% of all words and asked ${carrier.questions} clarifying question(s).`
+        },
+        {
+          icon: '🧊',
+          award: 'Coldest 2-Letter Drop',
+          winner: coldest.name,
+          reason: `Deployed ${coldest.coldCount} ultra-short reply bomb(s) that shifted the room temperature.`
+        },
+        {
+          icon: '🤞',
+          award: 'The “Promise” Merchant',
+          winner: apologizer.name,
+          reason: `Logged ${apologizer.apologies} apology/promise marker(s) while actions remained pending.`
+        }
+      ];
+    }
+
+    // =========================================================================
+    // 5. DOM RENDERERS (HERO CHAT, CATEGORIES, WALL OF LOVE, FULL REPORT)
+    // =========================================================================
+    function escapeHtml(s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function escapeAttr(s) {
+      return escapeHtml(s).replace(/'/g, '&#39;');
+    }
+
+    function renderHeroJamieShowcase(activeId = 9) {
+      const container = document.getElementById('heroJamieChatList');
+      container.innerHTML = HERO_JAMIE_MESSAGES.map(m => {
+        const isYou = m.sender === 'You';
+        const isActive = m.id === activeId;
+        return `
+          <div data-msg-id="${m.id}" class="chat-bubble-item cursor-pointer flex flex-col ${isYou ? 'items-end' : 'items-start'}">
+            <div class="max-w-[82%] px-3.5 py-2 rounded-2xl ${
+              isYou
+                ? 'bg-[#191715] dark:bg-[#D94E34] text-[#FAF6F0] rounded-br-sm'
+                : 'bg-[#F3ECE1] dark:bg-[#221E1B] text-[#191715] dark:text-[#F5EFE6] border border-[#E4DDD1] dark:border-[#332D27] rounded-bl-sm'
+            } ${isActive ? 'chat-bubble-active shadow-md' : ''}">
+              ${!isYou ? `<div class="text-[10px] font-bold text-[#D94E34] mb-0.5">Jamie</div>` : ''}
+              <div class="leading-snug">${escapeHtml(m.text)}</div>
+              <div class="text-[9px] font-mono opacity-65 text-right mt-0.5">${m.time}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const activeMsg = HERO_JAMIE_MESSAGES.find(x => x.id === activeId) || HERO_JAMIE_MESSAGES[9];
+      document.getElementById('marginNoteTimestamp').textContent = activeMsg.time;
+      document.getElementById('marginNoteSpeaker').textContent = `${activeMsg.sender} wrote at ${activeMsg.time}:`;
+      document.getElementById('marginNoteQuote').textContent = `“${activeMsg.text}”`;
+      document.getElementById('marginNoteHeadline').textContent = activeMsg.noteTitle;
+      document.getElementById('marginNoteBody').textContent = activeMsg.note;
+
+      container.querySelectorAll('.chat-bubble-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const id = parseInt(el.dataset.msgId, 10);
+          renderHeroJamieShowcase(id);
+        });
+      });
+    }
+
+    function renderCategoryPills() {
+      const box = document.getElementById('categoryPillsContainer');
+      box.innerHTML = TWELVE_CATEGORIES.map(c => {
+        const active = c.id === currentCategoryKey;
+        return `
+          <button type="button" data-cat-id="${c.id}" class="cat-pill-btn px-5 py-3 rounded-full text-sm sm:text-base font-medium transition shadow-sm border ${
+            active
+              ? 'bg-[#D94E34] text-white border-[#D94E34] shadow-md scale-[1.02]'
+              : 'bg-[#FFFDF9] dark:bg-[#1D1A17] text-[#191715] dark:text-[#F5EFE6] border-[#E4DDD1] dark:border-[#2E2924] hover:border-[#D94E34]'
+          }">
+            ${c.pill}
+          </button>
+        `;
+      }).join('');
+
+      box.querySelectorAll('.cat-pill-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const catId = btn.dataset.catId;
+          loadSampleCategory(catId, true);
+        });
+      });
+    }
+
+    function renderWallOfLoveMarquee() {
+      const track = document.getElementById('wallOfLoveTrack');
+      const doubled = [...WALL_OF_LOVE_ITEMS, ...WALL_OF_LOVE_ITEMS];
+      track.innerHTML = doubled.map((item, idx) => `
+        <div data-wall-idx="${idx % WALL_OF_LOVE_ITEMS.length}" class="wall-card cursor-pointer w-[320px] sm:w-[370px] shrink-0 p-6 rounded-3xl bg-[#FFFDF9] dark:bg-[#1D1A17] border border-[#E4DDD1] dark:border-[#2E2924] hover:border-[#D94E34] transition shadow-sm flex flex-col justify-between space-y-4">
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-[#D94E34] font-semibold">
+              <span>${escapeHtml(item.tag)}</span>
+              <span>TAP TO VIEW ↗</span>
+            </div>
+            <p class="font-serif text-xl sm:text-2xl text-[#191715] dark:text-[#F5EFE6] leading-snug">
+              ${escapeHtml(item.caption)}
+            </p>
+          </div>
+          <div class="p-3.5 rounded-2xl bg-[#FAF6F0] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924] text-xs italic text-[#6E665E] dark:text-[#A69C91] line-clamp-2">
+            ${escapeHtml(item.miloQuote)}
+          </div>
+        </div>
+      `).join('');
+
+      track.querySelectorAll('.wall-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const item = WALL_OF_LOVE_ITEMS[parseInt(card.dataset.wallIdx, 10)];
+          openWallLightbox(item);
+        });
+      });
+    }
+
+    function openWallLightbox(item) {
+      document.getElementById('lightboxTag').textContent = item.tag;
+      document.getElementById('lightboxCaption').textContent = item.caption;
+      document.getElementById('lightboxMiloQuote').textContent = item.miloQuote;
+      document.getElementById('lightboxChatReaction').innerHTML = item.reactions.map(r => `
+        <div class="px-4 py-2.5 rounded-2xl bg-[#F3ECE1] dark:bg-[#221E1B] text-xs sm:text-sm text-[#191715] dark:text-[#F5EFE6]">
+          ${escapeHtml(r)}
+        </div>
+      `).join('');
+      const modal = document.getElementById('wallLightboxModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function updateDetectedParticipantsUI(rawText, preferredPerspective) {
+      const parsed = parseChatTranscript(rawText);
+      const names = [...new Set(parsed.messages.map(m => m.sender))];
+      const box = document.getElementById('detectedParticipantsBox');
+      if (names.length === 0) {
+        box.innerHTML = `<span class="text-xs text-[#6E665E]">Paste a chat to detect participants…</span>`;
+        return;
+      }
+
+      if (!preferredPerspective || !names.includes(preferredPerspective)) {
+        currentPerspective = names[0];
+      } else {
+        currentPerspective = preferredPerspective;
+      }
+
+      box.innerHTML = names.map(n => {
+        const active = n === currentPerspective;
+        return `
+          <button type="button" data-person="${escapeAttr(n)}" class="person-pill px-4 py-2 rounded-full text-xs font-semibold border transition ${
+            active
+              ? 'bg-[#191715] dark:bg-[#F5EFE6] text-[#FAF6F0] dark:text-[#191715] border-[#191715]'
+              : 'bg-[#FAF6F0] dark:bg-[#1D1A17] text-[#6E665E] dark:text-[#A69C91] border-[#E4DDD1] dark:border-[#2E2924] hover:border-[#D94E34]'
+          }">
+            ${active ? '👤 ' : ''}${escapeHtml(n)}
+          </button>
+        `;
+      }).join('');
+
+      box.querySelectorAll('.person-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentPerspective = btn.dataset.person;
+          updateDetectedParticipantsUI(document.getElementById('chatInputTextarea').value, currentPerspective);
+          runAndRenderCurrentChat(false);
+        });
+      });
+    }
+
+    function renderMiloReportUI(rep) {
+      if (!rep) return;
+      currentReportObj = rep;
+
+      const catMeta = TWELVE_CATEGORIES.find(c => c.id === rep.categoryKey) || TWELVE_CATEGORIES[0];
+      document.getElementById('detectedFormatPill').textContent = `FORMAT: ${rep.format}`;
+      document.getElementById('computeLatencyPill').textContent = `${rep.elapsedMs} ms`;
+
+      document.getElementById('reportCategoryBadge').textContent = catMeta.badge;
+      document.getElementById('reportIdSpan').textContent = `REPORT #WMT-${1000 + rep.totalMsgs * 37}`;
+      document.getElementById('reportTelemetrySpan').textContent = `${rep.totalMsgs} MESSAGES • ${rep.participants.length} PARTICIPANTS • ${rep.totalWords} WORDS`;
+
+      document.getElementById('reportEditorialTitle').textContent = rep.narrative.title;
+      document.getElementById('reportSubtitleDeck').textContent = rep.narrative.deck;
+
+      // Effort bar
+      const f = rep.primaryFocus;
+      const o = rep.counterpart;
+      const leftW = Math.max(18, Math.min(84, f.wordShare));
+      document.getElementById('effortLeftLabel').textContent = `PERSPECTIVE: ${f.name.toUpperCase()} (${f.wordShare}% WORD SHARE)`;
+      document.getElementById('effortRightLabel').textContent = `COUNTERPART: ${o.name.toUpperCase()} (${o.wordShare}% WORD SHARE)`;
+      document.getElementById('effortBarLeft').style.width = `${leftW}%`;
+      document.getElementById('effortBarRight').style.width = `${100 - leftW}%`;
+
+      // Narrative Paragraphs
+      document.getElementById('miloNarrativeBody').innerHTML = rep.narrative.paragraphs
+        .map(p => `<p>${p}</p>`)
+        .join('');
+      document.getElementById('miloPullQuote').textContent = rep.narrative.pullQuote;
+
+      // Character Profiles
+      document.getElementById('characterProfilesGrid').innerHTML = rep.participants.map(p => `
+        <div class="p-6 sm:p-7 rounded-3xl bg-[#FAF6F0] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924] space-y-4 flex flex-col justify-between">
+          <div class="space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h4 class="font-serif text-3xl text-[#191715] dark:text-[#F5EFE6]">${escapeHtml(p.name)}</h4>
+              <span class="px-3 py-1 rounded-full text-xs font-mono font-semibold bg-[#D94E34]/15 text-[#D94E34] border border-[#D94E34]/30">
+                ${escapeHtml(p.archetype)}
+              </span>
+            </div>
+            <p class="text-sm text-[#191715]/85 dark:text-[#F5EFE6]/85 leading-relaxed">
+              ${escapeHtml(p.personalRead)}
+            </p>
+          </div>
+
+          <div class="pt-4 border-t border-[#E4DDD1] dark:border-[#2E2924] space-y-2 text-xs">
+            <div class="flex justify-between font-mono text-[#6E665E] dark:text-[#A69C91]">
+              <span>SHARE OF VOICE: <strong class="text-[#191715] dark:text-[#F5EFE6]">${p.wordShare}% (${p.msgCount} msgs)</strong></span>
+              <span>HEDGES / EXCUSES: <strong class="text-[#D94E34]">${p.hedges + p.darvoCount}</strong></span>
+            </div>
+            <div class="p-3 rounded-2xl bg-[#FFFDF9] dark:bg-[#1D1A17] border border-[#E4DDD1] dark:border-[#2E2924]">
+              <span class="text-[10px] font-mono uppercase text-[#6E665E] block">UNSPOKEN MOTIVE:</span>
+              <span class="font-medium text-[#191715] dark:text-[#F5EFE6]">${escapeHtml(p.motive)}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // Superlatives
+      document.getElementById('superlativeAwardsGrid').innerHTML = rep.superlatives.map(s => `
+        <div class="p-5 rounded-3xl bg-[#FAF6F0] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924] space-y-2">
+          <div class="text-2xl">${s.icon}</div>
+          <div class="text-[11px] font-mono uppercase tracking-wider text-[#D94E34] font-semibold">${escapeHtml(s.award)}</div>
+          <div class="font-serif text-2xl text-[#191715] dark:text-[#F5EFE6]">${escapeHtml(s.winner)}</div>
+          <p class="text-xs text-[#6E665E] dark:text-[#A69C91] leading-relaxed">${escapeHtml(s.reason)}</p>
+        </div>
+      `).join('');
+
+      // Subtext Translations
+      document.getElementById('subtextTranslationList').innerHTML = rep.subtextTranslations.map(item => `
+        <div class="p-5 rounded-3xl bg-[#FAF6F0] dark:bg-[#141210] border border-[#E4DDD1] dark:border-[#2E2924] space-y-3">
+          <div class="flex items-center justify-between text-xs font-mono text-[#6E665E]">
+            <span class="font-bold text-[#191715] dark:text-[#F5EFE6]">${escapeHtml(item.sender)} wrote:</span>
+            <span>${escapeHtml(item.time)}</span>
+          </div>
+          <div class="p-3 rounded-2xl bg-[#FFFDF9] dark:bg-[#1D1A17] border border-[#E4DDD1] dark:border-[#2E2924] font-serif italic text-xl text-[#191715] dark:text-[#F5EFE6]">
+            “${escapeHtml(item.said)}”
+          </div>
+          <div class="space-y-1">
+            <div class="text-[10px] font-mono uppercase tracking-widest text-[#D94E34] font-semibold">WHAT MILO HEARD:</div>
+            <p class="text-xs sm:text-sm text-[#191715]/90 dark:text-[#F5EFE6]/90 leading-relaxed">${escapeHtml(item.meant)}</p>
+          </div>
+        </div>
+      `).join('');
+
+      // Increment live counters
+      totalMessagesCounterVal += rep.totalMsgs;
+      totalReportsCounterVal += 1;
+      document.getElementById('liveMessagesCounter').textContent = totalMessagesCounterVal.toLocaleString();
+      document.getElementById('liveReportsCounter').textContent = totalReportsCounterVal.toLocaleString();
+    }
+
+    // =========================================================================
+    // 6. HIGH-DPI PARCHMENT STORY CARD PNG EXPORT (HTML5 CANVAS)
+    // =========================================================================
+    function downloadMiloStoryPng() {
+      if (!currentReportObj) return;
+      const r = currentReportObj;
+      const canvas = document.getElementById('miloStoryCanvas');
+      const ctx = canvas.getContext('2d');
+
+      // Warm Parchment Background
+      ctx.fillStyle = '#FAF6F0';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Editorial Frame
+      const pad = 64;
+      ctx.fillStyle = '#FFFDF9';
+      ctx.strokeStyle = '#191715';
+      ctx.lineWidth = 3;
+      ctx.fillRect(pad, pad, canvas.width - pad * 2, canvas.height - pad * 2);
+      ctx.strokeRect(pad, pad, canvas.width - pad * 2, canvas.height - pad * 2);
+
+      // Masthead
+      ctx.fillStyle = '#D94E34';
+      ctx.font = 'bold 24px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('WHATMILOTHINKS.COM • 100% OFFLINE REPORT', canvas.width / 2, 145);
+
+      ctx.fillStyle = '#191715';
+      ctx.font = 'italic 64px Georgia, serif';
+      ctx.fillText('What Milo Thinks', canvas.width / 2, 220);
+
+      // Divider
+      ctx.strokeStyle = '#E4DDD1';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(pad + 50, 255);
+      ctx.lineTo(canvas.width - pad - 50, 255);
+      ctx.stroke();
+
+      // Title Wrap
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#191715';
+      ctx.font = 'bold 40px Georgia, serif';
+      let y = 325;
+      y = wrapCanvasText(ctx, r.narrative.title, pad + 55, y, canvas.width - (pad + 55) * 2, 50);
+
+      // Pull Quote Box
+      y += 25;
+      ctx.fillStyle = '#F3ECE1';
+      ctx.fillRect(pad + 55, y, canvas.width - (pad + 55) * 2, 210);
+      ctx.fillStyle = '#D94E34';
+      ctx.fillRect(pad + 55, y, 8, 210);
+
+      ctx.fillStyle = '#191715';
+      ctx.font = 'italic 30px Georgia, serif';
+      wrapCanvasText(ctx, r.narrative.pullQuote, pad + 85, y + 55, canvas.width - (pad + 85) * 2, 42);
+
+      y += 265;
+
+      // Participant Profiles
+      r.participants.slice(0, 3).forEach(p => {
+        ctx.fillStyle = '#191715';
+        ctx.font = 'bold 32px "Plus Jakarta Sans", sans-serif';
+        ctx.fillText(`${p.name} — ${p.archetype}`, pad + 55, y);
+        y += 38;
+        ctx.fillStyle = '#6E665E';
+        ctx.font = '24px "Plus Jakarta Sans", sans-serif';
+        y = wrapCanvasText(ctx, `Motive: ${p.motive}`, pad + 55, y, canvas.width - (pad + 55) * 2, 34);
+        y += 30;
+      });
+
+      // Footer
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#6E665E';
+      ctx.font = '22px "JetBrains Mono", monospace';
+      ctx.fillText('Upload a chat. Milo tells you what’s really going on. • whatmilothinks.com', canvas.width / 2, canvas.height - 100);
+
+      const link = document.createElement('a');
+      link.download = `WhatMiloThinks-Report-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      showToast('Downloaded shareable What Milo Thinks story card!');
+    }
+
+    function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
+      const words = String(text || '').split(' ');
+      let line = '';
+      for (let i = 0; i < words.length; i++) {
+        const testLine = line + words[i] + ' ';
+        if (ctx.measureText(testLine).width > maxWidth && i > 0) {
+          ctx.fillText(line, x, y);
+          line = words[i] + ' ';
+          y += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      if (line) {
+        ctx.fillText(line, x, y);
+        y += lineHeight;
+      }
+      return y;
+    }
+
+    // =========================================================================
+    // 7. CONTROLLERS & EVENT BINDINGS
+    // =========================================================================
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toastText').textContent = msg;
+      t.classList.remove('hidden');
+      t.classList.add('flex');
+      setTimeout(() => {
+        t.classList.add('hidden');
+        t.classList.remove('flex');
+      }, 2800);
+    }
+
+    function loadSampleCategory(catId, scrollToReport = false) {
+      const cat = TWELVE_CATEGORIES.find(c => c.id === catId) || TWELVE_CATEGORIES[0];
+      currentCategoryKey = cat.id;
+      document.getElementById('chatInputTextarea').value = cat.transcript;
+      document.getElementById('relationshipCategorySelect').value = cat.id;
+      renderCategoryPills();
+      updateDetectedParticipantsUI(cat.transcript, cat.defaultPerspective);
+
+      const rep = generateMiloEditorialReport(cat.transcript, cat.id, currentPerspective);
+      renderMiloReportUI(rep);
+
+      if (scrollToReport) {
+        document.getElementById('milo-report-section').scrollIntoView({ behavior: 'smooth' });
+        showToast(`Milo analyzed "${cat.pill}" in ${rep.elapsedMs} ms`);
+      }
+    }
+
+    function runAndRenderCurrentChat(scroll = true) {
+      const raw = document.getElementById('chatInputTextarea').value;
+      const catKey = document.getElementById('relationshipCategorySelect').value;
+      currentCategoryKey = catKey;
+      renderCategoryPills();
+      const rep = generateMiloEditorialReport(raw, catKey, currentPerspective);
+      if (!rep) {
+        showToast('Please paste at least 2 chat messages for Milo to read!');
+        return;
+      }
+      renderMiloReportUI(rep);
+      if (scroll) {
+        document.getElementById('milo-report-section').scrollIntoView({ behavior: 'smooth' });
+        showToast(`Milo finished reading ${rep.totalMsgs} messages!`);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // 1. Render Hero Jamie Chat & Wall of Love
+      renderHeroJamieShowcase(9);
+      renderWallOfLoveMarquee();
+
+      // 2. Load Default Sample ("🫠 The situationship" — You & Jamie)
+      loadSampleCategory('situationship', false);
+
+      // 3. Hero "Read Milo's Full Report on You & Jamie" button
+      document.getElementById('loadJamieFullReportBtn').addEventListener('click', () => {
+        loadSampleCategory('situationship', true);
+      });
+
+      // 4. Generate Report Button
+      document.getElementById('generateMiloReportBtn').addEventListener('click', () => {
+        runAndRenderCurrentChat(true);
+      });
+
+      // 5. Textarea change updates participant pills automatically
+      document.getElementById('chatInputTextarea').addEventListener('input', (e) => {
+        updateDetectedParticipantsUI(e.target.value, currentPerspective);
+      });
+
+      // 6. Clear Transcript Button
+      document.getElementById('clearTranscriptBtn').addEventListener('click', () => {
+        document.getElementById('chatInputTextarea').value = '';
+        updateDetectedParticipantsUI('', '');
+      });
+
+      // 7. File Upload & Drag-and-Drop
+      const fileInput = document.getElementById('chatFileInput');
+      const dropZone = document.getElementById('fileDropZone');
+
+      function ingestFile(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const text = ev.target.result;
+          document.getElementById('chatInputTextarea').value = text;
+          updateDetectedParticipantsUI(text, '');
+          runAndRenderCurrentChat(true);
+        };
+        reader.readAsText(file);
+      }
+
+      fileInput.addEventListener('change', (e) => ingestFile(e.target.files[0]));
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('border-[#D94E34]');
+      });
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('border-[#D94E34]');
+      });
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-[#D94E34]');
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+          ingestFile(e.dataTransfer.files[0]);
+        }
+      });
+
+      // 8. Export Story Card PNG & Copy Summary
+      document.getElementById('downloadStoryCardBtn').addEventListener('click', downloadMiloStoryPng);
+      document.getElementById('copyReportSummaryBtn').addEventListener('click', () => {
+        if (!currentReportObj) return;
+        const r = currentReportObj;
+        const summary = [
+          `📜 WHAT MILO THINKS (${r.totalMsgs} messages analyzed)`,
+          `Title: ${r.narrative.title}`,
+          ``,
+          `${r.narrative.pullQuote}`,
+          ``,
+          ...r.participants.map(p => `• ${p.name}: ${p.archetype} (${p.wordShare}% of words)`),
+          `— Generated 100% offline at whatmilothinks.com`
+        ].join('\n');
+        const temp = document.createElement('textarea');
+        temp.value = summary;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand('copy');
+        document.body.removeChild(temp);
+        showToast('Copied Milo’s verdict to your clipboard!');
+      });
+
+      // 9. Modals (Wall Lightbox, Export Guide, Startup Blueprint for Zed Kazi)
+      document.getElementById('closeWallLightboxBtn').addEventListener('click', () => {
+        document.getElementById('wallLightboxModal').classList.add('hidden');
+        document.getElementById('wallLightboxModal').classList.remove('flex');
+      });
+      document.getElementById('openExportGuideBtn').addEventListener('click', () => {
+        document.getElementById('exportGuideModal').classList.remove('hidden');
+        document.getElementById('exportGuideModal').classList.add('flex');
+      });
+      document.getElementById('closeExportGuideBtn').addEventListener('click', () => {
+        document.getElementById('exportGuideModal').classList.add('hidden');
+        document.getElementById('exportGuideModal').classList.remove('flex');
+      });
+
+      const openBp = () => {
+        document.getElementById('blueprintModal').classList.remove('hidden');
+        document.getElementById('blueprintModal').classList.add('flex');
+      };
+      document.getElementById('openBlueprintBtnNav').addEventListener('click', openBp);
+      document.getElementById('openBlueprintBtnFooter').addEventListener('click', openBp);
+      document.getElementById('closeBlueprintBtn').addEventListener('click', () => {
+        document.getElementById('blueprintModal').classList.add('hidden');
+        document.getElementById('blueprintModal').classList.remove('flex');
+      });
+
+      // 10. Late Night Reading Mode Toggle
+      document.getElementById('themeToggleBtn').addEventListener('click', () => {
+        const html = document.documentElement;
+        html.classList.toggle('dark');
+        document.getElementById('themeToggleIcon').textContent = html.classList.contains('dark') ? '☀️' : '🌙';
+      });
+    });
+  </script>
+</body>
+</html>
