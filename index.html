@@ -72,7 +72,8 @@
     --report-bg: #FAF6F0; --report-card: #FFFDF9; --report-text: #191715;
     --report-muted: #6E665E; --report-border: #E4DDD1; --report-terra: #D94E34;
   }
-  html { scroll-behavior: smooth; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  button, a, [role="button"] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
   *{ box-sizing: border-box; }
   body {
     background: var(--bg);
@@ -116,6 +117,8 @@
     background: linear-gradient(135deg, var(--terra) 0%, var(--terra2) 100%);
     color: #fff; font-weight: 700; border-radius: 100px;
     transition: all .25s var(--ease); position: relative; overflow: hidden;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
   .btn-primary::after {
     content: ''; position: absolute; inset: 0;
@@ -130,6 +133,8 @@
     background: rgba(255,255,255,.06); border: 1px solid var(--line2);
     color: var(--text); font-weight: 600; border-radius: 100px;
     transition: all .2s var(--ease);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
   .btn-ghost:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.2); }
   body.light .btn-ghost { background: rgba(25,23,21,.05); border: 1px solid rgba(25,23,21,.18); color: var(--text); }
@@ -143,6 +148,8 @@
     background: rgba(229,81,58,.12); color: var(--terra2);
     border: 1px solid rgba(229,81,58,.25); cursor: pointer;
     transition: all .2s var(--ease);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
   .evidence-chip:hover { background: var(--terra); color: #fff; transform: translateY(-2px) scale(1.03); box-shadow: 0 6px 16px rgba(229,81,58,.35); }
   body.light .evidence-chip { background: rgba(217,78,52,.14); color: #B83B24; border-color: rgba(217,78,52,.32); }
@@ -216,6 +223,14 @@
   .upload-zone {
     border: 2px dashed rgba(229,81,58,.3); border-radius: 16px;
     transition: all .25s var(--ease); cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ── INTERACTIVE CARDS (funnel steps) ── */
+  .step1-card, .step2-card, .step6-pill, .person-pill, .cat-pill-btn, .wall-card {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
   .upload-zone:hover, .upload-zone.drag-over {
     border-color: var(--terra); background: rgba(229,81,58,.06);
@@ -233,6 +248,8 @@
     border: 1px solid var(--line2); background: rgba(255,255,255,.04);
     font-size: .8rem; font-weight: 600; color: var(--muted);
     cursor: pointer; transition: all .2s var(--ease); white-space: nowrap;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
   .cat-pill:hover, .cat-pill.active {
     background: rgba(229,81,58,.12); border-color: rgba(229,81,58,.4);
@@ -628,6 +645,7 @@
       <div id="uploadStatusPanel" class="hidden p-4 rounded-2xl" style="background:rgba(61,139,90,.08);border:1px solid rgba(61,139,90,.2)">
         <div class="flex items-center gap-2 text-sm font-semibold" style="color:#3D8B5A">✓ Chat loaded — <span id="step3MsgCount">0</span> messages detected</div>
       </div>
+      <button id="step3ContinueBtn" type="button" class="btn-primary w-full py-3.5 text-sm font-semibold flex items-center justify-center gap-2 mt-4">Continue <span>→</span></button>
     </div>
 
     <!-- STEP 4 -->
@@ -1073,7 +1091,7 @@
   <div class="glass w-full max-w-lg rounded-3xl p-6 space-y-5">
     <div class="flex items-center justify-between">
       <h3 class="font-serif text-2xl" style="color:var(--text)">How to Export in 10 Seconds</h3>
-      <button onclick="document.getElementById('exportGuideModal').classList.add('hidden');document.getElementById('exportGuideModal').classList.remove('flex')" class="btn-ghost w-9 h-9 rounded-full flex items-center justify-center">✕</button>
+      <button id="closeExportGuideBtn" type="button" class="btn-ghost w-9 h-9 rounded-full flex items-center justify-center">✕</button>
     </div>
     <div class="space-y-3 text-sm" style="color:var(--muted)">
       <div class="p-4 rounded-2xl" style="background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.2)"><strong style="color:#25D366">WhatsApp:</strong> Open chat → ⋮ menu → More → Export Chat → Without Media → Share file here</div>
@@ -1700,6 +1718,8 @@ function updateDetectedParticipantsUI(rawText, preferredPerspective){
 function renderMiloReportUI(rep){
   if(!rep) return;
   currentReportObj=rep;
+  const reportSecEl=document.getElementById('milo-report-section');
+  if(reportSecEl){ reportSecEl.classList.remove('hidden','reveal-hidden'); reportSecEl.classList.add('visible'); }
   const catMeta=TWELVE_CATEGORIES.find(c=>c.id===rep.categoryKey)||TWELVE_CATEGORIES[0];
   document.getElementById('detectedFormatPill').textContent=`FORMAT: ${rep.format}`;
   document.getElementById('computeLatencyPill').textContent=`${rep.elapsedMs} ms`;
@@ -1865,7 +1885,6 @@ function buildAiTimeline(messages){
   const t0=aiMessages[0].timestamp;
   const t1=aiMessages[aiMessages.length-1].timestamp;
   const span=Math.max(t1-t0,1);
-  const signals=computeSignalForMsg;
   aiMessages.forEach((m,idx)=>{
     const pct=((m.timestamp-t0)/span)*100;
     const isOut=m.sender===(aiMessages[0].sender);
@@ -1988,6 +2007,8 @@ let currentCarouselIndex=1;
 let currentAnalyticsData=null;
 let currentRawMessages=[];
 let currentVibe='neutral';
+let scannerGuardTimer=null;
+let scannerFinished=false;
 
 function showToast(msg){
   const t=document.getElementById('toast');
@@ -2160,6 +2181,7 @@ function launchScannerAndTeaserLifecycle(){
   if(!currentAnalyticsData){
     processUploadedTranscriptText(currentRawMessages.length? document.getElementById('chatInputTextarea').value : '');
   }
+  scannerFinished=false;
   const funnel=document.getElementById('onboardingFunnel');
   if(funnel) funnel.classList.add('hidden');
   const scannerContainer=document.getElementById('miloScannerContainer');
@@ -2199,6 +2221,7 @@ function launchScannerAndTeaserLifecycle(){
   const countEl=document.getElementById('scannerCountVal');
   const progressEl=document.getElementById('scannerProgressBar');
   function updateRollup(now){
+    if(scannerFinished) return;
     const elapsed=now-startT;
     const progress=Math.min(1,elapsed/durMs);
     const curCount=Math.round(progress*total);
@@ -2208,6 +2231,8 @@ function launchScannerAndTeaserLifecycle(){
     else transitionToReflectionPhase();
   }
   requestAnimationFrame(updateRollup);
+  // Fallback: if rAF is throttled (low-power mode / background tab), still advance.
+  scannerGuardTimer=setTimeout(function(){ if(!scannerFinished) transitionToReflectionPhase(); }, 2800);
   const skipBtn=document.getElementById('skipScannerBtn');
   if(skipBtn) skipBtn.onclick=()=>transitionToReflectionPhase();
   // start AI timeline animation after scanner
@@ -2215,6 +2240,9 @@ function launchScannerAndTeaserLifecycle(){
 }
 
 function transitionToReflectionPhase(){
+  if(scannerFinished) return;
+  scannerFinished=true;
+  if(scannerGuardTimer){ clearTimeout(scannerGuardTimer); scannerGuardTimer=null; }
   const activeView=document.getElementById('scannerActiveView');
   const reflectionView=document.getElementById('reflectionPhaseView');
   if(activeView) activeView.classList.add('hidden');
@@ -2361,7 +2389,8 @@ function renderTeaserCardsData(){
   // Card 6: Psychological profile (participant archetypes)
   const card6Profiles=document.getElementById('card6Profiles');
   if(card6Profiles){
-    card6Profiles.innerHTML=rep.participants.map(p=>`
+    const profs=(currentReportObj&&currentReportObj.participants)||[];
+    card6Profiles.innerHTML=profs.map(p=>`
       <div class="p-4 rounded-2xl border border-[#2E2924] bg-[#1F1A17]">
         <div class="flex items-center gap-2 mb-1">
           <span class="text-xl">${p.archetype.split(' ').pop().includes('Officer')?'📊':p.archetype.includes('Ghost')?'👻':p.archetype.includes('Artist')?'🎭':p.archetype.includes('Collector')?'🧾':p.archetype.includes('Improviser')?'🎪':'👤'}</span>
@@ -2469,60 +2498,44 @@ function setupInteractiveListeners(){
     }
     goToFunnelStep(4);
   });
-  const s4cont=document.getElementById('step4ContinueBtn');
+  const s4cont=document.getElementById('funnelStep4NextBtn');
   if(s4cont) s4cont.addEventListener('click',()=>goToFunnelStep(5));
   // Step 5
-  const s5y1=document.getElementById('step5SelectYou1');
+  const s5y1=document.getElementById('step5Choice1');
   if(s5y1) s5y1.addEventListener('click',()=>{
     s5y1.classList.add('border-2','border-[#EC4899]','bg-[#EC4899]/10');
-    const s5y2=document.getElementById('step5SelectYou2');
+    const s5y2=document.getElementById('step5Choice2');
     if(s5y2) s5y2.classList.remove('border-2','border-[#FBBF24]','bg-[#FBBF24]/10');
-    const sub1=document.getElementById('step5Substep1');
-    if(sub1) sub1.classList.remove('hidden');
-    const sub2=document.getElementById('step5Substep2');
-    if(sub2) sub2.classList.add('hidden');
   });
-  const s5y2=document.getElementById('step5SelectYou2');
+  const s5y2=document.getElementById('step5Choice2');
   if(s5y2) s5y2.addEventListener('click',()=>{
     s5y2.classList.add('border-2','border-[#FBBF24]','bg-[#FBBF24]/10');
-    const s5y1=document.getElementById('step5SelectYou1');
+    const s5y1=document.getElementById('step5Choice1');
     if(s5y1) s5y1.classList.remove('border-2','border-[#EC4899]','bg-[#EC4899]/10');
-    const sub1=document.getElementById('step5Substep1');
-    if(sub1) sub1.classList.add('hidden');
-    const sub2=document.getElementById('step5Substep2');
-    if(sub2) sub2.classList.remove('hidden');
   });
-  const s5n1=document.getElementById('step5Next1Btn');
-  if(s5n1) s5n1.addEventListener('click',()=>{
-    const inp=document.getElementById('step5NameInput1');
-    const sub1=document.getElementById('step5Substep1');
-    if(sub1) sub1.classList.add('hidden');
-    const sub2=document.getElementById('step5Substep2');
-    if(sub2) sub2.classList.remove('hidden');
-  });
-  const s5n2=document.getElementById('step5Next2Btn');
-  if(s5n2) s5n2.addEventListener('click',()=>{
-    const inp=document.getElementById('step5NameInput2');
-    if(inp&&inp.value.trim()) currentPerspective=inp.value.trim();
-    goToFunnelStep(6);
-  });
+  const s5cont=document.getElementById('funnelStep5NextBtn');
+  if(s5cont) s5cont.addEventListener('click',()=>goToFunnelStep(6));
   // Step 6
-  const s6cont=document.getElementById('step6ContinueBtn');
+  const s6cont=document.getElementById('funnelStep6NextBtn');
   if(s6cont) s6cont.addEventListener('click',()=>goToFunnelStep(7));
   // Step 7 launch
   const s7launch=document.getElementById('funnelStep7LaunchBtn');
   if(s7launch) s7launch.addEventListener('click',()=>{
-    runAndRenderCurrentChat(true);
-    const funnelEl=document.getElementById('onboardingFunnel');
-    const scannerContainer=document.getElementById('miloScannerContainer');
-    if(scannerContainer){
-      if(funnelEl) funnelEl.style.display='none';
-      scannerContainer.classList.remove('hidden');
-      scannerContainer.scrollIntoView({ behavior:'smooth' });
-      // Build + auto-play the AI model ingestion timeline on the real uploaded chat
-      buildAiTimeline(currentRawMessages);
-      setTimeout(()=>startAiAnimation(), 300);
+    const ta=document.getElementById('chatInputTextarea');
+    const raw=ta?ta.value:'';
+    if(!raw.trim() && !(currentRawMessages&&currentRawMessages.length)){
+      showToast('Load a chat first — upload a file or pick a sample.');
+      goToFunnelStep(3);
+      return;
     }
+    runAndRenderCurrentChat(false);
+    if(!currentAnalyticsData){
+      showToast('Could not read that chat. Try a WhatsApp .txt export.');
+      return;
+    }
+    const funnelEl=document.getElementById('onboardingFunnel');
+    if(funnelEl) funnelEl.style.display='none';
+    launchScannerAndTeaserLifecycle();
   });
   const createBtn=document.getElementById('createReportBtn');
   if(createBtn) createBtn.addEventListener('click', launchScannerAndTeaserLifecycle);
@@ -2584,7 +2597,7 @@ function setupInteractiveListeners(){
   // Generate report btn (uploader)
   $bind('generateMiloReportBtn', 'click', ()=>runAndRenderCurrentChat(true));
   // Textarea input
-  document.getElementById('chatInputTextarea').addEventListener('input',(e)=>{
+  $bind('chatInputTextarea', 'input', (e)=>{
     updateDetectedParticipantsUI(e.target.value, currentPerspective);
   });
   // Clear transcript
@@ -2618,8 +2631,8 @@ function setupInteractiveListeners(){
       if(e.dataTransfer.files&&e.dataTransfer.files[0]) ingestFile(e.dataTransfer.files[0]);
     });
   }
-  document.getElementById('downloadStoryCardBtn').addEventListener('click', downloadMiloStoryPng);
-  document.getElementById('copyReportSummaryBtn').addEventListener('click',()=>{
+  $bind('downloadStoryCardBtn', 'click', downloadMiloStoryPng);
+  $bind('copyReportSummaryBtn', 'click', ()=>{
     if(!currentReportObj) return;
     const r=currentReportObj;
     const summary=[ `📜 WHAT MILO THINKS (${r.totalMsgs} messages analyzed)`, `Title: ${r.narrative.title}`, ``, `${r.narrative.pullQuote}`, ``, ...r.participants.map(p=>`• ${p.name}: ${p.archetype} (${p.wordShare}% of words)`), `— Generated 100% offline at whatmilothinks.com` ].join('\n');
@@ -2635,46 +2648,72 @@ function setupInteractiveListeners(){
     document.getElementById('wallLightboxModal').classList.add('hidden');
     document.getElementById('wallLightboxModal').classList.remove('flex');
   });
-  document.getElementById('openExportGuideBtn').addEventListener('click',()=>{
+  $bind('openExportGuideBtn', 'click', ()=>{
     document.getElementById('exportGuideModal').classList.remove('hidden');
     document.getElementById('exportGuideModal').classList.add('flex');
   });
-  document.getElementById('closeExportGuideBtn').addEventListener('click',()=>{
+  $bind('closeExportGuideBtn', 'click', ()=>{
     document.getElementById('exportGuideModal').classList.add('hidden');
     document.getElementById('exportGuideModal').classList.remove('flex');
   });
   const openBp=()=>{
-    document.getElementById('blueprintModal').classList.remove('hidden');
-    document.getElementById('blueprintModal').classList.add('flex');
+    document.getElementById('startupBlueprintModal').classList.remove('hidden');
+    document.getElementById('startupBlueprintModal').classList.add('flex');
   };
   $bind('openBlueprintBtnNav', 'click', openBp);
   $bind('openBlueprintBtnFooter', 'click', openBp);
-  document.getElementById('closeBlueprintBtn').addEventListener('click',()=>{
-    document.getElementById('blueprintModal').classList.add('hidden');
-    document.getElementById('blueprintModal').classList.remove('flex');
+  $bind('closeBlueprintBtn', 'click', ()=>{
+    document.getElementById('startupBlueprintModal').classList.add('hidden');
+    document.getElementById('startupBlueprintModal').classList.remove('flex');
   });
 }
 
 // =========================================================================
 // 7. INIT
 // =========================================================================
-function init(){
-  // Setup scroll-reveal animations (IntersectionObserver)
-  const observer=new IntersectionObserver((entries)=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');e.target.classList.remove('reveal-hidden');observer.unobserve(e.target);}});},{rootMargin:'0px 0px -50px 0px',threshold:0.1});
-  document.querySelectorAll('.reveal,.reveal-left,.reveal-right').forEach(el=>{el.classList.add('reveal-hidden');observer.observe(el);});
+function showBootError(msg){
+  try{
+    let bar=document.getElementById('bootErrorBar');
+    if(!bar){
+      bar=document.createElement('div');
+      bar.id='bootErrorBar';
+      bar.style.cssText='position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#7f1d1d;color:#fff;font:12px/1.45 monospace;padding:10px 12px;border-radius:10px;max-height:35vh;overflow:auto;white-space:pre-wrap;box-shadow:0 8px 30px rgba(0,0,0,.5)';
+      bar.onclick=function(){ bar.remove(); };
+      document.body.appendChild(bar);
+    }
+    bar.textContent='Milo error: '+msg+' — tap to dismiss';
+  }catch(_){}
+}
+window.addEventListener('error', function(ev){ if(ev && ev.message) showBootError(ev.message); });
 
-  renderHeroJamieShowcase(9);
-  renderWallOfLoveMarquee();
-  renderCategoryPills();
-  renderFunnelCategoryPills();
-  renderPlatformGrid();
-  renderVibeGrid();
-  goToFunnelStep(1);
-  loadSampleCategory('situationship', false);
-  document.getElementById('loadJamieFullReportBtn').addEventListener('click',()=>{
-    loadSampleCategory('situationship', true);
-  });
-  setupInteractiveListeners();
+function init(){
+  // 1) Bind interactions FIRST so every button works even if a renderer fails.
+  try{ setupInteractiveListeners(); }
+  catch(err){ console.error('[Milo] listeners',err); showBootError('listeners: '+err.message); }
+
+  // 2) Scroll reveal — guarded for older mobile browsers.
+  try{
+    if('IntersectionObserver' in window){
+      const observer=new IntersectionObserver((entries)=>{
+        entries.forEach(function(en){
+          if(en.isIntersecting){ en.target.classList.add('visible'); en.target.classList.remove('reveal-hidden'); observer.unobserve(en.target); }
+        });
+      },{rootMargin:'0px 0px -50px 0px',threshold:0.05});
+      document.querySelectorAll('.reveal,.reveal-left,.reveal-right').forEach(function(el){ el.classList.add('reveal-hidden'); observer.observe(el); });
+    }
+  }catch(err){ console.error('[Milo] reveal',err); }
+
+  // 3) Render everything, each isolated so one failure can't kill the rest.
+  const safe=function(fn,label){ try{ fn(); }catch(err){ console.error('[Milo] '+label,err); showBootError(label+': '+err.message); } };
+  safe(function(){ renderHeroJamieShowcase(9); },'hero');
+  safe(renderWallOfLoveMarquee,'wall');
+  safe(renderCategoryPills,'pills');
+  safe(renderFunnelCategoryPills,'funnel pills');
+  safe(renderPlatformGrid,'platforms');
+  safe(renderVibeGrid,'vibes');
+  safe(function(){ goToFunnelStep(1); },'funnel');
+  safe(function(){ loadSampleCategory('situationship', false); },'sample report');
+  safe(function(){ $bind('loadJamieFullReportBtn','click',function(){ loadSampleCategory('situationship', true); }); },'jamie');
 }
 if(document.readyState==='loading') window.addEventListener('DOMContentLoaded', init);
 else init();
