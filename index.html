@@ -771,7 +771,7 @@
           </div>
           <div class="ai-metrics" id="aiMetrics">
             <div class="ai-metric"><span class="val" id="aiMsgVal">—</span><span class="lab">messages scanned</span></div>
-            <div class="ai-metric"><span class="val" id="aiShareVal">—%</span><span class="lab">your share of voice</span></div>
+            <div class="ai-metric"><span class="val" id="aiShareVal">—%</span><span class="lab">lead voice share</span></div>
             <div class="ai-metric"><span class="val" id="aiHedgeVal">—</span><span class="lab">hedges flagged</span></div>
             <div class="ai-metric"><span class="val" id="aiColdVal">—</span><span class="lab">cold bombs</span></div>
           </div>
@@ -1497,7 +1497,7 @@ function buildParticipantEditorialProfile(p, wordShare, avgWords, avgGapMins, ca
     motive='Floating through the thread on pure enthusiasm until concrete logistics are required.';
     personalRead=`${p.name} accounts for ${wordShare}% of the chat volume (${avgWords} words/turn). High energy in the opening act, mysteriously hard to reach when the bill or deadline arrives.`;
   }
-  return { archetype, motive, personalRead };
+  return { archetype, motive:fixYouGrammar(motive), personalRead:fixYouGrammar(personalRead) };
 }
 
 function composeMiloNarrative(categoryKey, participants, focus, other, msgs, analytics){
@@ -1543,7 +1543,7 @@ function composeMiloNarrative(categoryKey, participants, focus, other, msgs, ana
   const p1=`Let’s start with the basic geometry of this conversation, because the numbers tell the story before we even look at the excuses. Across <strong>${msgs.length}</strong> messages, <strong>${focus.name}</strong> is driving the clarity—asking direct questions like <span class="evidence-chip" data-quote="${escapeAttr(fQuote.text)}">“${escapeHtml(fQuote.text.slice(0,42))}” [${fQuote.time}]</span> and putting real logistics on the table. On the other side of the screen, <strong>${other.name}</strong> (${other.wordShare}% of total words) is operating in a completely different genre: <strong>${other.archetype}</strong>.`;
   const p2=`Look closely at how <strong>${other.name}</strong> handles a straightforward question. Instead of a clean yes or no, we get classic conversational smoke grenades like <span class="evidence-chip" data-quote="${escapeAttr(oQuote.text)}">“${escapeHtml(oQuote.text.slice(0,46))}” [${oQuote.time}]</span>. ${other.hedges>0?`Milo counted <strong>${other.hedges} hedging marker(s)</strong> designed to keep their schedule liquid. `:''} ${other.darvoCount>0?`And the moment ${focus.name} points out the obvious contradiction, ${other.name} pivots to <strong>${other.darvoCount} deflection/gaslight move(s)</strong>—trying to make ${focus.name} feel unreasonable for simply reading the clock. `:''} ${other.coldCount>0?`Meanwhile, ${other.coldCount} ultra-short reply bomb(s) drop the room temperature to zero. `:''}`;
   const p3=`The most revealing moment in the entire transcript happens at the end. After spending the whole thread rationing out effort, watch what happens around <span class="evidence-chip" data-quote="${escapeAttr(lastMsg.text)}">“${escapeHtml(lastMsg.text.slice(0,48))}” [${lastMsg.timeStr}]</span>. In any chat, the person who cares less holds the leverage—until the person carrying the conversation stops chasing and drops a two-letter reply. That's when the “promises” and double-texts suddenly appear.`;
-  return { title, deck, pullQuote, paragraphs:[p1,p2,p3] };
+  return { title:fixYouGrammar(title), deck:fixYouGrammar(deck), pullQuote:fixYouGrammar(pullQuote), paragraphs:[p1,p2,p3].map(fixYouGrammar) };
 }
 
 function computeSuperlatives(participants, focus, other){
@@ -1622,6 +1622,17 @@ function generateMiloEditorialReport(rawText, categoryKey, perspectiveName){
 // =========================================================================
 function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function escapeAttr(s){ return escapeHtml(s).replace(/'/g,'&#39;'); }
+function fixYouGrammar(s){
+  return String(s==null?'':s)
+    .replace(/\bYou’s\b/g,'Your').replace(/\bYou's\b/g,'Your')
+    .replace(/\bYou Wants\b/g,'You Want')
+    .replace(/\bYou is\b/g,'You are').replace(/\bYou was\b/g,'You were')
+    .replace(/\bYou has\b/g,'You have').replace(/\bYou does\b/g,'You do')
+    .replace(/\bYou wants\b/gi,'You want').replace(/\bYou texts\b/gi,'You text')
+    .replace(/\bYou treats\b/gi,'You treat').replace(/\bYou accounts\b/gi,'You account')
+    .replace(/\bYou pivots\b/gi,'You pivot').replace(/\bYou drops\b/gi,'You drop')
+    .replace(/\bYou gives\b/gi,'You give').replace(/\bYou holds\b/gi,'You hold');
+}
 
 function renderHeroJamieShowcase(activeId=9){
   const container=document.getElementById('heroJamieChatList');
@@ -1921,9 +1932,15 @@ function resetAiMetrics(){
 }
 function updateAiMetrics(processedCount){
   const total=aiMessages.length;
-  const pct=total?Math.round((processedCount/total)*100):0;
   const msgEl=document.getElementById('aiMsgVal'); if(msgEl) msgEl.textContent=`${processedCount}/${total}`;
-  const shareEl=document.getElementById('aiShareVal'); if(shareEl) shareEl.textContent=`${pct}%`;
+  const shareEl=document.getElementById('aiShareVal'); if(shareEl){
+    const processed=aiMessages.slice(0,processedCount);
+    const counts={};
+    processed.forEach(function(m){ counts[m.sender]=(counts[m.sender]||0)+1; });
+    let leadCount=0;
+    Object.keys(counts).forEach(function(k){ if(counts[k]>leadCount) leadCount=counts[k]; });
+    shareEl.textContent=processed.length?`${Math.round((leadCount/processed.length)*100)}%`:'—%';
+  }
   const hedgeEl=document.getElementById('aiHedgeVal'); if(hedgeEl){
     const h=aiMessages.slice(0,processedCount).filter(m=>classifySignal(m.text)==='hedge').length;
     hedgeEl.textContent=h;
